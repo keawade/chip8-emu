@@ -104,8 +104,152 @@ bool Chip8::load(const char *file_path)
 void Chip8::emulateCycle()
 {
   // fetch opcode
-  // decode opcode
-  // execute opcode
+  opcode = memory[pc] << 8 | memory[pc + 1];
+
+  // decode and execute opcode
+  switch (opcode & 0xF000)
+  {
+  case 0x0000:
+    switch (opcode & 0x000F)
+    {
+    case 0x0000:
+      // 00E0 - CLS
+      // Clear the display.
+      break;
+
+    case 0x000E:
+      // 00EE - RET
+      // Return from a subroutine.
+      break;
+
+    default:
+      printf("Unknown opcode [0x0000]: 0x%X\n", opcode);
+    }
+    break;
+
+  case 0x1000: // 1nnn: JP addr - set program counter to nnn
+    pc = opcode & 0x0FFF;
+    break;
+
+  case 0x2000:
+    // 2nnn - CALL addr
+    // Call subroutine at nnn.
+    I = opcode & 0x0FFF;
+    pc += 2;
+    break;
+
+    // 3xkk - SE Vx, byte
+    // Skip next instruction if Vx = kk.
+
+    // 4xkk - SNE Vx, byte
+    // Skip next instruction if Vx != kk.
+
+    // 5xy0 - SE Vx, Vy
+    // Skip next instruction if Vx = Vy.
+
+    // 6xkk - LD Vx, byte
+    // Set Vx = kk.
+
+    // 7xkk - ADD Vx, byte
+    // Set Vx = Vx + kk.
+
+    // 8xy0 - LD Vx, Vy
+    // Set Vx = Vy.
+
+    // 8xy1 - OR Vx, Vy
+    // Set Vx = Vx OR Vy.
+
+    // 8xy2 - AND Vx, Vy
+    // Set Vx = Vx AND Vy.
+
+    // 8xy3 - XOR Vx, Vy
+    // Set Vx = Vx XOR Vy.
+
+  case 0x0004:
+    // 8xy4 - ADD Vx, Vy
+    // Set Vx = Vx + Vy, set VF = carry.
+    if (V[(opcode & 0x00F0) >> 4] > (0xFF - V[(opcode & 0x0F00) >> 8]))
+      V[0xF] = 1; // carry
+    else
+      V[0xF] = 0;
+
+    V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
+    pc += 2;
+    break;
+
+    // 8xy5 - SUB Vx, Vy
+    // Set Vx = Vx - Vy, set VF = NOT borrow.
+
+    // 8xy6 - SHR Vx {, Vy}
+    // Set Vx = Vx SHR 1.
+
+    // 8xy7 - SUBN Vx, Vy
+    // Set Vx = Vy - Vx, set VF = NOT borrow.
+
+    // 8xyE - SHL Vx {, Vy}
+    // Set Vx = Vx SHL 1.
+
+    // 9xy0 - SNE Vx, Vy
+    // Skip next instruction if Vx != Vy.
+
+    // Annn - LD I, addr
+    // Set I = nnn.
+
+    // Bnnn - JP V0, addr
+    // Jump to location nnn + V0.
+
+    // Cxkk - RND Vx, byte
+    // Set Vx = random byte AND kk.
+
+    // Dxyn - DRW Vx, Vy, nibble
+    // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+
+    // Ex9E - SKP Vx
+    // Skip next instruction if key with the value of Vx is pressed.
+
+    // ExA1 - SKNP Vx
+    // Skip next instruction if key with the value of Vx is not pressed.
+
+    // Fx07 - LD Vx, DT
+    // Set Vx = delay timer value.
+
+    // Fx0A - LD Vx, K
+    // Wait for a key press, store the value of the key in Vx.
+
+    // Fx15 - LD DT, Vx
+    // Set delay timer = Vx.
+
+    // Fx18 - LD ST, Vx
+    // Set sound timer = Vx.
+
+    // Fx1E - ADD I, Vx
+    // Set I = I + Vx.
+
+    // Fx29 - LD F, Vx
+    // Set I = location of sprite for digit Vx.
+
+    // Fx33 - LD B, Vx
+    // Store BCD representation of Vx in memory locations I, I+1, and I+2.
+
+    // Fx55 - LD [I], Vx
+    // Store registers V0 through Vx in memory starting at location I.
+
+    // Fx65 - LD Vx, [I]
+    // Read registers V0 through Vx from memory starting at location I.
+
+  default:
+    printf("Unknown opcode: 0x%X\n", opcode);
+  }
 
   // update timers
+  if (delay_timer > 0)
+    --delay_timer;
+
+  if (sound_timer > 0)
+  {
+    if (sound_timer == 1)
+      printf("BEEP!\n");
+
+    --sound_timer;
+  }
 }
