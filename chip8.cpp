@@ -85,59 +85,92 @@ void Chip8::emulateCycle()
     pc = opcode & 0x0FFF;
     break;
 
+  case 0x3000:
     // 3xkk - SE Vx, byte
     // Skip next instruction if Vx = kk.
-
-    // 4xkk - SNE Vx, byte
-    // Skip next instruction if Vx != kk.
-
-    // 5xy0 - SE Vx, Vy
-    // Skip next instruction if Vx = Vy.
-
-    // 6xkk - LD Vx, byte
-    // Set Vx = kk.
-
-    // 7xkk - ADD Vx, byte
-    // Set Vx = Vx + kk.
-
-    // 8xy0 - LD Vx, Vy
-    // Set Vx = Vy.
-
-    // 8xy1 - OR Vx, Vy
-    // Set Vx = Vx OR Vy.
-
-    // 8xy2 - AND Vx, Vy
-    // Set Vx = Vx AND Vy.
-
-    // 8xy3 - XOR Vx, Vy
-    // Set Vx = Vx XOR Vy.
-
-  case 0x0004:
-    // 8xy4 - ADD Vx, Vy
-    // Set Vx = Vx + Vy, set VF = carry.
-    if (V[(opcode & 0x00F0) >> 4] > (0xFF - V[(opcode & 0x0F00) >> 8]))
-      V[0xF] = 1; // carry
-    else
-      V[0xF] = 0;
-
-    V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
-    pc += 2;
     break;
 
-    // 8xy5 - SUB Vx, Vy
-    // Set Vx = Vx - Vy, set VF = NOT borrow.
+  case 0x4000:
+    // 4xkk - SNE Vx, byte
+    // Skip next instruction if Vx != kk.
+    break;
 
-    // 8xy6 - SHR Vx {, Vy}
-    // Set Vx = Vx SHR 1.
+  case 0x5000:
+    // 5xy0 - SE Vx, Vy
+    // Skip next instruction if Vx = Vy.
+    break;
 
-    // 8xy7 - SUBN Vx, Vy
-    // Set Vx = Vy - Vx, set VF = NOT borrow.
+  case 0x6000:
+    // 6xkk - LD Vx, byte
+    // Set Vx = kk.
+    break;
 
-    // 8xyE - SHL Vx {, Vy}
-    // Set Vx = Vx SHL 1.
+  case 0x7000:
+    // 7xkk - ADD Vx, byte
+    // Set Vx = Vx + kk.
+    break;
 
+  case 0x8000:
+    switch (opcode & 0x000F)
+    {
+    case 0x0000:
+      // 8xy0 - LD Vx, Vy
+      // Set Vx = Vy.
+      break;
+
+    case 0x0001:
+      // 8xy1 - OR Vx, Vy
+      // Set Vx = Vx OR Vy.
+      break;
+
+    case 0x0002:
+      // 8xy2 - AND Vx, Vy
+      // Set Vx = Vx AND Vy.
+      break;
+
+    case 0x0003:
+      // 8xy3 - XOR Vx, Vy
+      // Set Vx = Vx XOR Vy.
+      break;
+
+    case 0x0004:
+      // 8xy4 - ADD Vx, Vy
+      // Set Vx = Vx + Vy, set VF = carry.
+      if (V[(opcode & 0x00F0) >> 4] > (0xFF - V[(opcode & 0x0F00) >> 8]))
+        V[0xF] = 1; // carry
+      else
+        V[0xF] = 0;
+
+      V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
+      pc += 2;
+      break;
+
+    case 0x0005:
+      // 8xy5 - SUB Vx, Vy
+      // Set Vx = Vx - Vy, set VF = NOT borrow.
+      break;
+
+    case 0x0006:
+      // 8xy6 - SHR Vx {, Vy}
+      // Set Vx = Vx SHR 1.
+      break;
+
+    case 0x0007:
+      // 8xy7 - SUBN Vx, Vy
+      // Set Vx = Vy - Vx, set VF = NOT borrow.
+      break;
+
+    case 0x000E:
+      // 8xyE - SHL Vx {, Vy}
+      // Set Vx = Vx SHL 1.
+      break;
+    }
+    break;
+
+  case 0x9000:
     // 9xy0 - SNE Vx, Vy
     // Skip next instruction if Vx != Vy.
+    break;
 
   case 0xA000:
     // Annn - LD I, addr
@@ -146,53 +179,89 @@ void Chip8::emulateCycle()
     pc += 2;
     break;
 
+  case 0xB000:
     // Bnnn - JP V0, addr
     // Jump to location nnn + V0.
-
-    // Cxkk - RND Vx, byte
-    // Set Vx = random byte AND kk.
-
-    // Dxyn - DRW Vx, Vy, nibble
-    // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
-
-    // Ex9E - SKP Vx
-    // Skip next instruction if key with the value of Vx is pressed.
-
-    // ExA1 - SKNP Vx
-    // Skip next instruction if key with the value of Vx is not pressed.
-
-    // Fx07 - LD Vx, DT
-    // Set Vx = delay timer value.
-
-    // Fx0A - LD Vx, K
-    // Wait for a key press, store the value of the key in Vx.
-
-    // Fx15 - LD DT, Vx
-    // Set delay timer = Vx.
-
-    // Fx18 - LD ST, Vx
-    // Set sound timer = Vx.
-
-    // Fx1E - ADD I, Vx
-    // Set I = I + Vx.
-
-    // Fx29 - LD F, Vx
-    // Set I = location of sprite for digit Vx.
-
-  case 0x0033:
-    // Fx33 - LD B, Vx
-    // Store BCD representation of Vx in memory locations I, I+1, and I+2.
-    memory[I] = V[(opcode & 0x0F00) >> 8] / 100;
-    memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
-    memory[I + 2] = (V[(opcode & 0x0F00) >> 8] % 100) % 10;
-    pc += 2;
     break;
 
-    // Fx55 - LD [I], Vx
-    // Store registers V0 through Vx in memory starting at location I.
+  case 0xC000:
+    // Cxkk - RND Vx, byte
+    // Set Vx = random byte AND kk.
+    break;
 
-    // Fx65 - LD Vx, [I]
-    // Read registers V0 through Vx from memory starting at location I.
+  case 0xD000:
+    // Dxyn - DRW Vx, Vy, nibble
+    // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+    break;
+
+  case 0xE000:
+    switch (opcode & 0x00FF)
+    {
+    case 0x009E:
+      // Ex9E - SKP Vx
+      // Skip next instruction if key with the value of Vx is pressed.
+      break;
+
+    case 0x00A1:
+      // ExA1 - SKNP Vx
+      // Skip next instruction if key with the value of Vx is not pressed.
+      break;
+    }
+    break;
+
+  case 0xF000:
+    switch (opcode & 0x00FF)
+    {
+    case 0x0007:
+      // Fx07 - LD Vx, DT
+      // Set Vx = delay timer value.
+      break;
+
+    case 0x000A:
+      // Fx0A - LD Vx, K
+      // Wait for a key press, store the value of the key in Vx.
+      break;
+
+    case 0x0015:
+      // Fx15 - LD DT, Vx
+      // Set delay timer = Vx.
+      break;
+
+    case 0x0018:
+      // Fx18 - LD ST, Vx
+      // Set sound timer = Vx.
+      break;
+
+    case 0x001E:
+      // Fx1E - ADD I, Vx
+      // Set I = I + Vx.
+      break;
+
+    case 0x0029:
+      // Fx29 - LD F, Vx
+      // Set I = location of sprite for digit Vx.
+      break;
+
+    case 0x0033:
+      // Fx33 - LD B, Vx
+      // Store BCD representation of Vx in memory locations I, I+1, and I+2.
+      memory[I] = V[(opcode & 0x0F00) >> 8] / 100;
+      memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
+      memory[I + 2] = (V[(opcode & 0x0F00) >> 8] % 100) % 10;
+      pc += 2;
+      break;
+
+    case 0x0055:
+      // Fx55 - LD [I], Vx
+      // Store registers V0 through Vx in memory starting at location I.
+      break;
+
+    case 0x0065:
+      // Fx65 - LD Vx, [I]
+      // Read registers V0 through Vx from memory starting at location I.
+      break;
+    }
+    break;
 
   default:
     printf("Unknown opcode: 0x%X\n", opcode);
