@@ -134,8 +134,9 @@ void Chip8::emulateCycle()
   case 0x2000:
     // 2nnn - CALL addr
     // Call subroutine at nnn.
-    I = opcode & 0x0FFF;
-    pc += 2;
+    stack[sp] = pc;
+    ++sp;
+    pc = opcode & 0x0FFF;
     break;
 
     // 3xkk - SE Vx, byte
@@ -192,8 +193,12 @@ void Chip8::emulateCycle()
     // 9xy0 - SNE Vx, Vy
     // Skip next instruction if Vx != Vy.
 
+  case 0xA000:
     // Annn - LD I, addr
     // Set I = nnn.
+    I = opcode & 0x0FFF;
+    pc += 2;
+    break;
 
     // Bnnn - JP V0, addr
     // Jump to location nnn + V0.
