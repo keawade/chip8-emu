@@ -228,8 +228,14 @@ void Chip8::emulateCycle()
     // Fx29 - LD F, Vx
     // Set I = location of sprite for digit Vx.
 
+  case 0x0033:
     // Fx33 - LD B, Vx
     // Store BCD representation of Vx in memory locations I, I+1, and I+2.
+    memory[I] = V[(opcode & 0x0F00) >> 8] / 100;
+    memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
+    memory[I + 2] = (V[(opcode & 0x0F00) >> 8] % 100) % 10;
+    pc += 2;
+    break;
 
     // Fx55 - LD [I], Vx
     // Store registers V0 through Vx in memory starting at location I.
