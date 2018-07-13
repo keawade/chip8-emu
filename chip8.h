@@ -46,7 +46,7 @@ public:
   ~Chip8();
 
   void emulateCycle();
-  bool load(const char *file_path);
+  bool loadProgram(const char *file_path);
 }
 
 #endif CHIP_8_H
