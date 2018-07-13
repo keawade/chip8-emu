@@ -115,11 +115,14 @@ void Chip8::emulateCycle()
     case 0x0000:
       // 00E0 - CLS
       // Clear the display.
+      // TODO
       break;
 
     case 0x000E:
       // 00EE - RET
       // Return from a subroutine.
+      pc = stack[sp];
+      --sp;
       break;
 
     default:
@@ -134,8 +137,8 @@ void Chip8::emulateCycle()
   case 0x2000:
     // 2nnn - CALL addr
     // Call subroutine at nnn.
-    stack[sp] = pc;
     ++sp;
+    stack[sp] = pc;
     pc = opcode & 0x0FFF;
     break;
 
