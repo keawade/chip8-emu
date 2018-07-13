@@ -33,15 +33,30 @@ void Chip8::initialize()
   sp = 0;     // Reset stack pointer
 
   // clear display
+  for (int i = 0; i < 2048; ++i)
+    gfx[i] = 0;
+
   // clear stack
+  for (int i = 0; i < 16; ++i)
+    stack[i] = 0;
+
   // clear registers V0-VF
+  for (int i = 0; i < 16; ++i)
+    V[i] = 0;
+
+  // clear keyboard state?
+
   // clear memory
+  for (int i = 0; i < 4096; ++i)
+    memory[i] = 0;
 
   // load fontset
   for (int i = 0; i < 80; ++i)
     memory[i] = chip8_fontset[i];
 
   // reset timers
+  delay_timer = 0;
+  sound_timer = 0;
 }
 
 void Chip8::emulateCycle()
@@ -64,8 +79,9 @@ void Chip8::emulateCycle()
     case 0x000E:
       // 00EE - RET
       // Return from a subroutine.
-      pc = stack[sp];
       --sp;
+      pc = stack[sp];
+      pc += 2;
       break;
 
     default:
@@ -164,6 +180,10 @@ void Chip8::emulateCycle()
       // 8xyE - SHL Vx {, Vy}
       // Set Vx = Vx SHL 1.
       break;
+
+    default:
+      printf("Unknown opcode [0x8000]: 8x%X\n", opcode);
+      break;
     }
     break;
 
@@ -206,7 +226,12 @@ void Chip8::emulateCycle()
       // ExA1 - SKNP Vx
       // Skip next instruction if key with the value of Vx is not pressed.
       break;
+
+    default:
+      printf("Unknown opcode [0xE000]: Ex%X\n", opcode);
+      break;
     }
+
     break;
 
   case 0xF000:
@@ -259,6 +284,10 @@ void Chip8::emulateCycle()
     case 0x0065:
       // Fx65 - LD Vx, [I]
       // Read registers V0 through Vx from memory starting at location I.
+      break;
+
+    default:
+      printf("Unknown opcode [0xF000]: Fx%X\n", opcode);
       break;
     }
     break;
