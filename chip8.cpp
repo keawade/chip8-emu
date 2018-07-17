@@ -85,7 +85,7 @@ void Chip8::emulateCycle() {
                     break;
 
                 default:
-                    printf("Unknown opcode [0x0000]: 0x%X\n", opcode);
+                    printf("Unknown opcode [0x0000]: 0x%hd\n", opcode);
             }
             break;
 
@@ -181,7 +181,7 @@ void Chip8::emulateCycle() {
                     break;
 
                 default:
-                    printf("Unknown opcode [0x8000]: 8x%X\n", opcode);
+                    printf("Unknown opcode [0x8000]: 8x%hd\n", opcode);
                     break;
             }
             break;
@@ -226,7 +226,7 @@ void Chip8::emulateCycle() {
                     break;
 
                 default:
-                    printf("Unknown opcode [0xE000]: Ex%X\n", opcode);
+                    printf("Unknown opcode [0xE000]: Ex%hd\n", opcode);
                     break;
             }
 
@@ -284,13 +284,13 @@ void Chip8::emulateCycle() {
                     break;
 
                 default:
-                    printf("Unknown opcode [0xF000]: Fx%X\n", opcode);
+                    printf("Unknown opcode [0xF000]: Fx%hd\n", opcode);
                     break;
             }
             break;
 
         default:
-            printf("Unknown opcode: 0x%X\n", opcode);
+            printf("Unknown opcode: 0x%hd\n", opcode);
     }
 
     // update timers
