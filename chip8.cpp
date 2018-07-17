@@ -189,6 +189,12 @@ void Chip8::emulateCycle() {
                 case 0x0005:
                     // 8xy5 - SUB Vx, Vy
                     // Set Vx = Vx - Vy, set VF = NOT borrow.
+                    if (V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4]) {
+                        V[0xF] = 1;
+                    } else {
+                        V[0xF] = 0;
+                    }
+                    V[(opcode & 0x0F00) >> 8] -= V[(opcode & 0x00F0) >> 4];
                     pc += 2;
                     break;
 
@@ -201,6 +207,12 @@ void Chip8::emulateCycle() {
                 case 0x0007:
                     // 8xy7 - SUBN Vx, Vy
                     // Set Vx = Vy - Vx, set VF = NOT borrow.
+                    if (V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4]) {
+                        V[0xF] = 1;
+                    } else {
+                        V[0xF] = 0;
+                    }
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
                     pc += 2;
                     break;
 
