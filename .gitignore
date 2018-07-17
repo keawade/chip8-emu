@@ -1,2 +1,6 @@
 programs/*
 !programs/.gitkeep
+
+/dist/
+/build/
+
