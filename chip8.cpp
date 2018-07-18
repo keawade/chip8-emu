@@ -3,11 +3,9 @@
 
 #include "chip8.h"
 
-Chip8::Chip8() {
-}
+Chip8::Chip8() {}
 
-Chip8::~Chip8() {
-}
+Chip8::~Chip8() {}
 
 int16_t chip8_fontset[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -25,7 +23,7 @@ int16_t chip8_fontset[80] = {
     0xF0, 0x80, 0x80, 0x80, 0xF0, // C
     0xE0, 0x90, 0x90, 0x90, 0xE0, // D
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-    0xF0, 0x80, 0xF0, 0x80, 0x80 // F
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
 void Chip8::initialize() {
@@ -34,21 +32,23 @@ void Chip8::initialize() {
     I = 0; // Reset index register
     sp = 0; // Reset stack pointer
 
-    // clear display
+    // initialize clear display
     for (int i = 0; i < 2048; ++i)
         gfx[i] = 0;
 
-    // clear stack
+    // initialize clear stack
     for (int i = 0; i < 16; ++i)
         stack[i] = 0;
 
-    // clear registers V0-VF
+    // initialize clear registers V0-VF
     for (int i = 0; i < 16; ++i)
         V[i] = 0;
 
-    // clear keyboard state?
+    // initialize clear keyboard state
+    for (int i = 0; i < 16; ++i)
+        key[i] = 0;
 
-    // clear memory
+    // initialize clear memory
     for (int i = 0; i < 4096; ++i)
         memory[i] = 0;
 
@@ -201,6 +201,13 @@ void Chip8::emulateCycle() {
                 case 0x0006:
                     // 8xy6 - SHR Vx {, Vy}
                     // Set Vx = Vx SHR 1.
+                    // Shifts VY right by one and stores the result to VX (VY remains unchanged). VF is set to the value of the least significant bit of VY before the shift.
+                    
+                    // Store LSD of Vy in VF
+                    V[0xF] = V[(opcode & 0x00F0) >> 4] & 1;
+
+                    // Store Vy >> 1 in Vx
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] >> 1;
                     pc += 2;
                     break;
 
@@ -218,7 +225,17 @@ void Chip8::emulateCycle() {
 
                 case 0x000E:
                     // 8xyE - SHL Vx {, Vy}
-                    // Set Vx = Vx SHL 1.
+                    // Set Vy = Vx = Vy SHL 1.
+                    // Shifts VY left by one and copies the result to VX. VF is set to the value of the most significant bit of VY before the shift.
+                    
+                    // Store MSD of Vy in VF
+                    V[0xF] = V[(opcode & 0x00F0) >> 4] >> 7;
+
+                    // Store Vy << 1 in Vx
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] << 1;
+
+                    // Store Vy << 1 in Vy
+                    V[(opcode & 0x00F0) >> 4] = V[(opcode & 0x00F0) >> 4] << 1;
                     pc += 2;
                     break;
 
@@ -254,12 +271,44 @@ void Chip8::emulateCycle() {
         case 0xC000:
             // Cxkk - RND Vx, byte
             // Set Vx = random byte AND kk.
+            V[(opcode & 0x0F00) >> 8] = (rand() % 0xFF) & (opcode & 0x00FF);
             pc += 2;
             break;
 
         case 0xD000:
             // Dxyn - DRW Vx, Vy, nibble
             // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+            int8_t x = V[(opcode & 0x0F00) >> 8];
+            int8_t y = V[(opcode & 0x00F0) >> 4];
+            int8_t height = opcode & 0x000F;
+            int8_t pixel;
+
+            // Reset VF. We'll set this to 1 later if there is a collision.
+            V[0xF] = 0;
+
+            // For every line on the y axis
+            for (int yline = 0; yline < height; yline++) {
+                // Get the pixel data from memory
+                pixel = memory[I + yline];
+                for (int xline = 0; xline < 8; xline++) {
+                    // 0x80 == 0b10000000
+                    // For each x value, check if it is to be toggled (pixel AND current value from mem != 0)
+                    if ((pixel & (0x80 >> xline)) != 0) {
+                        // If a pixel is to be toggled
+                        // Check if if the value is already on
+                        if (gfx[(x + xline + ((y + yline) * 64))] == 1) {
+                            // If it is already on, set VF to 1
+                            V[0xF] = 1;
+                        }
+                        // XOR the given value with the new value
+                        gfx[x + xline + ((y + yline) * 64)] ^= 1;
+                    }
+                }
+            }
+
+            // Set the drawFlag to tell the system to update the screen
+            drawFlag = true;
+
             pc += 2;
             break;
 
@@ -268,12 +317,18 @@ void Chip8::emulateCycle() {
                 case 0x009E:
                     // Ex9E - SKP Vx
                     // Skip next instruction if key with the value of Vx is pressed.
+                    if (key[V[(opcode & 0x0F00) >> 8]]) {
+                        pc += 2;
+                    }
                     pc += 2;
                     break;
 
                 case 0x00A1:
                     // ExA1 - SKNP Vx
                     // Skip next instruction if key with the value of Vx is not pressed.
+                    if (!key[V[(opcode & 0x0F00) >> 8]]) {
+                        pc += 2;
+                    }
                     pc += 2;
                     break;
 
@@ -323,6 +378,7 @@ void Chip8::emulateCycle() {
                 case 0x0029:
                     // Fx29 - LD F, Vx
                     // Set I = location of sprite for digit Vx.
+                    I = memory[((opcode & 0x0F00) >> 8) * 5];
                     pc += 2;
                     break;
 
@@ -338,12 +394,24 @@ void Chip8::emulateCycle() {
                 case 0x0055:
                     // Fx55 - LD [I], Vx
                     // Store registers V0 through Vx in memory starting at location I.
+                    int8_t x = (opcode & 0x0F00) >> 8;
+                    // For each register
+                    for (int a = 0; a < x; a++) {
+                        // Save the register's data
+                        memory[I + a] = V[a];
+                    }
                     pc += 2;
                     break;
 
                 case 0x0065:
                     // Fx65 - LD Vx, [I]
                     // Read registers V0 through Vx from memory starting at location I.
+                    int8_t x = (opcode & 0x0F00) >> 8;
+                    // For each register
+                    for (int a = 0; a < x; a++) {
+                        // Load memory into the register
+                        V[a] = memory[I + a];
+                    }
                     pc += 2;
                     break;
 

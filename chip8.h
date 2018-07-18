@@ -37,9 +37,10 @@ public:
 
     // Graphics
     int8_t gfx[64 * 32];
+    bool drawFlag;
 
     // Keyboard state
-    int8_t key[16];
+    bool key[16];
 
     Chip8();
     ~Chip8();
