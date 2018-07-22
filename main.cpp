@@ -4,6 +4,8 @@ http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
  */
 #include <iostream>
 #include <ncurses.h>
+#include <thread>
+#include <chrono>
 
 #include "chip8.h"
 
@@ -13,7 +15,6 @@ Chip8 emulator;
 
 int main(int argc, char **argv)
 {
-
     // Start curses mode
     initscr();
 
@@ -58,6 +59,8 @@ int main(int argc, char **argv)
         refresh();
 
         // emulator.setKeys();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     // End curses mode
