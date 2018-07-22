@@ -3,8 +3,9 @@
 
 #include <stdint.h>
 
-class Chip8 {
-public:
+class Chip8
+{
+  public:
     int16_t opcode;
     int8_t memory[4096];
 

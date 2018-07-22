@@ -9,7 +9,8 @@ using namespace std;
 
 Chip8 emulator;
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
     // setupGraphics();
     // setupInput();
@@ -18,9 +19,10 @@ int main(int argc, char **argv) {
     emulator.initialize();
 
     // Load program into memory
-    emulator.loadProgram("programs/PONG");
+    emulator.loadProgram("programs/IBM.ch8");
 
-    for (;;) {
+    for (;;)
+    {
         // Emulate a cycle
         emulator.emulateCycle();
 
