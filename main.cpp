@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     emulator.initialize();
 
     // Load program into memory
-    emulator.loadProgram("programs/IBM.ch8");
+    emulator.loadProgram("programs/pong2.c8");
 
     for (;;)
     {

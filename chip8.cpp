@@ -34,27 +34,27 @@ void Chip8::initialize()
     sp = 0;     // Reset stack pointer
 
     // initialize clear display
-    for (int i = 0; i < 2048; ++i)
+    for (unsigned int i = 0; i < 2048; ++i)
         gfx[i] = 0;
 
     // initialize clear stack
-    for (int i = 0; i < 16; ++i)
+    for (unsigned int i = 0; i < 16; ++i)
         stack[i] = 0;
 
     // initialize clear registers V0-VF
-    for (int i = 0; i < 16; ++i)
+    for (unsigned int i = 0; i < 16; ++i)
         V[i] = 0;
 
     // initialize clear keyboard state
-    for (int i = 0; i < 16; ++i)
+    for (unsigned int i = 0; i < 16; ++i)
         key[i] = 0;
 
     // initialize clear memory
-    for (int i = 0; i < 4096; ++i)
+    for (unsigned int i = 0; i < 4096; ++i)
         memory[i] = 0;
 
     // load font set
-    for (int i = 0; i < 80; ++i)
+    for (unsigned int i = 0; i < 80; ++i)
         memory[i] = chip8_fontset[i];
 
     // reset timers
@@ -325,20 +325,20 @@ void Chip8::emulateCycle()
     {
         // Dxyn - DRW Vx, Vy, nibble
         // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
-        int8_t x = V[(opcode & 0x0F00) >> 8];
-        int8_t y = V[(opcode & 0x00F0) >> 4];
-        int8_t height = opcode & 0x000F;
-        int8_t pixel;
+        u_int8_t x = V[(opcode & 0x0F00) >> 8];
+        u_int8_t y = V[(opcode & 0x00F0) >> 4];
+        u_int8_t height = opcode & 0x000F;
+        u_int8_t pixel;
 
         // Reset VF. We'll set this to 1 later if there is a collision.
         V[0xF] = 0;
 
         // For every line on the y axis
-        for (int yline = 0; yline < height; yline++)
+        for (unsigned int yline = 0; yline < height; yline++)
         {
             // Get the pixel data from memory
             pixel = memory[I + yline];
-            for (int xline = 0; xline < 8; xline++)
+            for (unsigned int xline = 0; xline < 8; xline++)
             {
                 // 0x80 == 0b10000000
                 // For each x value, check if it is to be toggled (pixel AND current value from mem != 0)
@@ -472,7 +472,7 @@ void Chip8::emulateCycle()
         {
             // Fx55 - LD [I], Vx
             // Store registers V0 through Vx in memory starting at location I.
-            int8_t x = (opcode & 0x0F00) >> 8;
+            u_int8_t x = (opcode & 0x0F00) >> 8;
             // For each register
             for (int a = 0; a < x; a++)
             {
@@ -487,7 +487,7 @@ void Chip8::emulateCycle()
         {
             // Fx65 - LD Vx, [I]
             // Read registers V0 through Vx from memory starting at location I.
-            int8_t x = (opcode & 0x0F00) >> 8;
+            u_int8_t x = (opcode & 0x0F00) >> 8;
             // For each register
             for (int a = 0; a < x; a++)
             {
