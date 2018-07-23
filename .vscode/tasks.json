@@ -14,12 +14,12 @@
         "main.cpp",
         "chip8.cpp",
         "-lncurses",
-        "-lstdc++",
+        "-lstdc++"
       ],
       "group": {
         "kind": "build",
-        "isDefault": true,
-      },
-    },
-  ],
+        "isDefault": true
+      }
+    }
+  ]
 }
