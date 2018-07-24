@@ -86,14 +86,15 @@ void Chip8::initialize()
     sound_timer = 0;
 }
 
-template< typename T >
-std::string int_to_hex( T i )
+template <typename T>
+std::string int_to_hex(T i)
 {
-  std::stringstream stream;
-  stream << "0x" 
-         << std::setfill ('0') << std::setw(sizeof(T)*2) 
-         << std::hex << i;
-  return stream.str();
+    // Source: https://stackoverflow.com/a/5100745
+    std::stringstream stream;
+    stream << "0x"
+           << std::setfill('0') << std::setw(sizeof(T) * 2)
+           << std::hex << i;
+    return stream.str();
 }
 
 void Chip8::emulateCycle()
