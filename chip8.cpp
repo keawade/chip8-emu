@@ -58,27 +58,27 @@ void Chip8::initialize()
     sp = 0;     // Reset stack pointer
 
     // initialize clear display
-    for (unsigned int i = 0; i < 2048; ++i)
+    for (uint i = 0; i < 2048; ++i)
         gfx[i] = 0;
 
     // initialize clear stack
-    for (unsigned int i = 0; i < 16; ++i)
+    for (uint i = 0; i < 16; ++i)
         stack[i] = 0;
 
     // initialize clear registers V0-VF
-    for (unsigned int i = 0; i < 16; ++i)
+    for (uint i = 0; i < 16; ++i)
         V[i] = 0;
 
     // initialize clear keyboard state
-    for (unsigned int i = 0; i < 16; ++i)
+    for (uint i = 0; i < 16; ++i)
         key[i] = 0;
 
     // initialize clear memory
-    for (unsigned int i = 0; i < 4096; ++i)
+    for (uint i = 0; i < 4096; ++i)
         memory[i] = 0;
 
     // load font set
-    for (unsigned int i = 0; i < 80; ++i)
+    for (uint i = 0; i < 80; ++i)
         memory[i] = chip8_fontset[i];
 
     // reset timers
@@ -108,23 +108,23 @@ void Chip8::emulateCycle()
     log(cycle, "LOG", "Chip8::emulateCycle", int_to_hex(opcode));
 
     // decode and execute opcode
-    switch (opcode & 0xF000)
+    switch (A)
     {
-    case 0x0000:
+    case 0x0:
     {
-        switch (opcode & 0x000F)
+        switch (low)
         {
-        case 0x0000:
+        case 0xE0:
         {
             // 00E0 - CLS
             // Clear the display.
-            for (unsigned int i = 0; i < 2048; ++i)
+            for (uint i = 0; i < 2048; ++i)
                 gfx[i] = 0;
             drawFlag = true;
             pc += 2;
             break;
         }
-        case 0x000E:
+        case 0xEE:
         {
             // 00EE - RET
             // Return from a subroutine.
@@ -141,49 +141,49 @@ void Chip8::emulateCycle()
         break;
     }
 
-    case 0x1000: // 1nnn: JP addr - set program counter to nnn
+    case 0x1: // 1nnn: JP addr - set program counter to nnn
     {
-        pc = opcode & 0x0FFF; // Jump to nnn
+        pc = NNN; // Jump to nnn
         break;
     }
 
-    case 0x2000:
+    case 0x2:
     {
         // 2nnn - CALL addr
         // Call subroutine at nnn.
-        stack[sp] = pc;       // Store current program counter
-        ++sp;                 // Bump the stack pointer
-        pc = opcode & 0x0FFF; // Jump to nnn
+        stack[sp] = pc; // Store current program counter
+        ++sp;           // Bump the stack pointer
+        pc = NNN;       // Jump to nnn
         break;
     }
 
-    case 0x3000:
+    case 0x3:
     {
         // 3xkk - SE Vx, byte
         // Skip next instruction if Vx = kk.
-        if (V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
+        if (V[X] == low)
         {
             pc += 2;
         }
         pc += 2;
         break;
     }
-    case 0x4000:
+    case 0x4:
     {
         // 4xkk - SNE Vx, byte
         // Skip next instruction if Vx != kk.
-        if (V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
+        if (V[X] != low)
         {
             pc += 2;
         }
         pc += 2;
         break;
     }
-    case 0x5000:
+    case 0x5:
     {
         // 5xy0 - SE Vx, Vy
         // Skip next instruction if Vx = Vy.
-        if (V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4])
+        if (V[X] == V[Y])
         {
             pc += 2;
         }
@@ -191,106 +191,103 @@ void Chip8::emulateCycle()
         break;
     }
 
-    case 0x6000:
+    case 0x6:
     {
         // 6xkk - LD Vx, byte
         // Set Vx = kk.
-        V[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF);
+        V[X] = low;
         pc += 2;
         break;
     }
-    case 0x7000:
+    case 0x7:
     {
         // 7xkk - ADD Vx, byte
         // Set Vx = Vx + kk.
-        V[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
+        V[X] += low;
         pc += 2;
         break;
     }
-    case 0x8000:
+    case 0x8:
     {
-        switch (opcode & 0x000F)
+        switch (N)
         {
-        case 0x0000:
+        case 0x0:
         {
             // 8xy0 - LD Vx, Vy
             // Set Vx = Vy.
-            V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4];
+            V[X] = V[Y];
             pc += 2;
             break;
         }
-        case 0x0001:
+        case 0x1:
         {
             // 8xy1 - OR Vx, Vy
             // Set Vx = Vx OR Vy.
-            V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] | V[(opcode & 0x00F0) >> 4];
+            V[X] = V[X] | V[Y];
             pc += 2;
             break;
         }
-        case 0x0002:
+        case 0x2:
         {
             // 8xy2 - AND Vx, Vy
             // Set Vx = Vx AND Vy.
-            V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] & V[(opcode & 0x00F0) >> 4];
+            V[X] = V[X] & V[Y];
             pc += 2;
             break;
         }
-        case 0x0003:
+        case 0x3:
         {
             // 8xy3 - XOR Vx, Vy
             // Set Vx = Vx XOR Vy.
-            V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] ^ V[(opcode & 0x00F0) >> 4];
+            V[X] = V[X] ^ V[Y];
             pc += 2;
             break;
         }
-        case 0x0004:
+        case 0x4:
         {
             // 8xy4 - ADD Vx, Vy
             // Set Vx = Vx + Vy, set VF = carry.
-            if (V[(opcode & 0x00F0) >> 4] > (0xFF - V[(opcode & 0x0F00) >> 8]))
+            if (V[Y] > (0xFF - V[X]))
                 V[0xF] = 1; // carry
             else
                 V[0xF] = 0;
 
-            V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
+            V[X] += V[Y];
             pc += 2;
             break;
         }
-        case 0x0005:
+        case 0x5:
         {
             // 8xy5 - SUB Vx, Vy
             // Set Vx = Vx - Vy, set VF = NOT borrow.
-            if (V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4])
-            {
+            if (V[X] > V[Y])
                 V[0xF] = 1;
-            }
             else
-            {
                 V[0xF] = 0;
-            }
-            V[(opcode & 0x0F00) >> 8] -= V[(opcode & 0x00F0) >> 4];
+         
+            V[X] -= V[Y];
             pc += 2;
             break;
         }
-        case 0x0006:
+        case 0x6:
         {
             // 8xy6 - SHR Vx {, Vy}
             // Set Vx = Vx SHR 1.
             // Shifts VY right by one and stores the result to VX (VY remains unchanged). VF is set to the value of the least significant bit of VY before the shift.
 
             // Store LSD of Vy in VF
-            V[0xF] = V[(opcode & 0x00F0) >> 4] & 1;
+            V[0xF] = V[Y] & 1;
 
             // Store Vy >> 1 in Vx
-            V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] >> 1;
+            V[X] = V[Y] >> 1;
             pc += 2;
             break;
         }
-        case 0x0007:
+        case 0x7:
         {
             // 8xy7 - SUBN Vx, Vy
             // Set Vx = Vy - Vx, set VF = NOT borrow.
-            if (V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4])
+            if (V[X] > V[Y])
             {
                 V[0xF] = 1;
             }
@@ -298,24 +295,24 @@ void Chip8::emulateCycle()
             {
                 V[0xF] = 0;
             }
-            V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
+            V[X] = V[Y] - V[X];
             pc += 2;
             break;
         }
-        case 0x000E:
+        case 0xE:
         {
             // 8xyE - SHL Vx {, Vy}
             // Set Vy = Vx = Vy SHL 1.
             // Shifts VY left by one and copies the result to VX. VF is set to the value of the most significant bit of VY before the shift.
 
             // Store MSD of Vy in VF
-            V[0xF] = V[(opcode & 0x00F0) >> 4] >> 7;
+            V[0xF] = V[Y] >> 7;
 
             // Store Vy << 1 in Vx
-            V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] << 1;
+            V[X] = V[Y] << 1;
 
             // Store Vy << 1 in Vy
-            V[(opcode & 0x00F0) >> 4] = V[(opcode & 0x00F0) >> 4] << 1;
+            V[Y] = V[Y] << 1;
             pc += 2;
             break;
         }
@@ -330,58 +327,55 @@ void Chip8::emulateCycle()
         break;
     }
 
-    case 0x9000:
+    case 0x9:
     {
         // 9xy0 - SNE Vx, Vy
         // Skip next instruction if Vx != Vy.
-        if (V[(opcode & 0x0F00) >> 8] != V[(opcode & 0x00F0) >> 4])
+        if (V[X] != V[Y])
         {
             pc += 2;
         }
         pc += 2;
         break;
     }
-    case 0xA000:
+    case 0xA:
     {
         // Annn - LD I, addr
         // Set I = nnn.
-        I = opcode & 0x0FFF;
+        I = NNN;
         pc += 2;
         break;
     }
-    case 0xB000:
+    case 0xB:
     {
         // Bnnn - JP V0, addr
         // Jump to location nnn + V0.
-        pc = (opcode & 0x0FFF) + V[0];
+        pc = NNN + V[0];
         break;
     }
-    case 0xC000:
+    case 0xC:
     {
         // Cxkk - RND Vx, byte
         // Set Vx = random byte AND kk.
-        V[(opcode & 0x0F00) >> 8] = (rand() % 0xFF) & (opcode & 0x00FF);
+        V[X] = (rand() % 0xFF) & low;
         pc += 2;
         break;
     }
-    case 0xD000:
+    case 0xD:
     {
         // Dxyn - DRW Vx, Vy, nibble
         // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
-        u_int8_t x = V[(opcode & 0x0F00) >> 8];
-        u_int8_t y = V[(opcode & 0x00F0) >> 4];
-        u_int8_t height = opcode & 0x000F;
         u_int8_t pixel;
 
         // Reset VF. We'll set this to 1 later if there is a collision.
         V[0xF] = 0;
 
         // For every line on the y axis
-        for (unsigned int yline = 0; yline < height; yline++)
+        for (uint yline = 0; yline < N; yline++)
         {
             // Get the pixel data from memory
             pixel = memory[I + yline];
-            for (unsigned int xline = 0; xline < 8; xline++)
+            for (uint xline = 0; xline < 8; xline++)
             {
                 // 0x80 == 0b10000000
                 // For each x value, check if it is to be toggled (pixel AND current value from mem != 0)
@@ -389,13 +383,13 @@ void Chip8::emulateCycle()
                 {
                     // If a pixel is to be toggled
                     // Check if if the value is already on
-                    if (gfx[(x + xline + ((y + yline) * 64))] == 1)
+                    if (gfx[(V[X] + xline + ((V[Y] + yline) * 64))] == 1)
                     {
                         // If it is already on, set VF to 1
                         V[0xF] = 1;
                     }
                     // XOR the given value with the new value
-                    gfx[x + xline + ((y + yline) * 64)] ^= 1;
+                    gfx[V[X] + xline + ((V[Y] + yline) * 64)] ^= 1;
                 }
             }
         }
@@ -407,26 +401,26 @@ void Chip8::emulateCycle()
         break;
     }
 
-    case 0xE000:
+    case 0xE:
     {
-        switch (opcode & 0x00FF)
+        switch (low)
         {
-        case 0x009E:
+        case 0x9E:
         {
             // Ex9E - SKP Vx
             // Skip next instruction if key with the value of Vx is pressed.
-            if (key[V[(opcode & 0x0F00) >> 8]])
+            if (key[V[X]])
             {
                 pc += 2;
             }
             pc += 2;
             break;
         }
-        case 0x00A1:
+        case 0xA1:
         {
             // ExA1 - SKNP Vx
             // Skip next instruction if key with the value of Vx is not pressed.
-            if (!key[V[(opcode & 0x0F00) >> 8]])
+            if (!key[V[X]])
             {
                 pc += 2;
             }
@@ -444,20 +438,20 @@ void Chip8::emulateCycle()
         break;
     }
 
-    case 0xF000:
+    case 0xF:
     {
-        switch (opcode & 0x00FF)
+        switch (low)
         {
-        case 0x0007:
+        case 0x07:
         {
             // Fx07 - LD Vx, DT
             // Set Vx = delay timer value.
-            V[(opcode & 0x0F00) >> 8] = delay_timer;
+            V[X] = delay_timer;
             pc += 2;
             break;
         }
 
-        case 0x000A:
+        case 0x0A:
         {
             // Fx0A - LD Vx, K
             // Wait for a key press, store the value of the key in Vx.
@@ -465,60 +459,60 @@ void Chip8::emulateCycle()
             break;
         }
 
-        case 0x0015:
+        case 0x15:
         {
             // Fx15 - LD DT, Vx
             // Set delay timer = Vx.
-            delay_timer = V[(opcode & 0x0F00) >> 8];
+            delay_timer = V[X];
             pc += 2;
             break;
         }
 
-        case 0x0018:
+        case 0x18:
         {
             // Fx18 - LD ST, Vx
             // Set sound timer = Vx.
-            sound_timer = V[(opcode & 0x0F00) >> 8];
+            sound_timer = V[X];
             pc += 2;
             break;
         }
 
-        case 0x001E:
+        case 0x1E:
         {
             // Fx1E - ADD I, Vx
             // Set I = I + Vx.
-            I += V[(opcode & 0x0F00) >> 8];
+            I += V[X];
             pc += 2;
             break;
         }
 
-        case 0x0029:
+        case 0x29:
         {
             // Fx29 - LD F, Vx
             // Set I = location of sprite for digit Vx.
-            I = memory[((opcode & 0x0F00) >> 8) * 5];
+            I = memory[(X)*5];
             pc += 2;
             break;
         }
 
-        case 0x0033:
+        case 0x33:
         {
             // Fx33 - LD B, Vx
             // Store BCD representation of Vx in memory locations I, I+1, and I+2.
-            memory[I] = V[(opcode & 0x0F00) >> 8] / 100;
-            memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
-            memory[I + 2] = (V[(opcode & 0x0F00) >> 8] % 100) % 10;
+            memory[I] = V[X] / 100;
+            memory[I + 1] = (V[X] / 10) % 10;
+            memory[I + 2] = (V[X] % 100) % 10;
             pc += 2;
             break;
         }
 
-        case 0x0055:
+        case 0x55:
         {
             // Fx55 - LD [I], Vx
             // Store registers V0 through Vx in memory starting at location I.
-            u_int8_t x = (opcode & 0x0F00) >> 8;
+
             // For each register
-            for (int a = 0; a < x; a++)
+            for (int a = 0; a <= X; a++)
             {
                 // Save the register's data
                 memory[I + a] = V[a];
@@ -527,13 +521,12 @@ void Chip8::emulateCycle()
             break;
         }
 
-        case 0x0065:
+        case 0x65:
         {
             // Fx65 - LD Vx, [I]
             // Read registers V0 through Vx from memory starting at location I.
-            u_int8_t x = (opcode & 0x0F00) >> 8;
             // For each register
-            for (int a = 0; a < x; a++)
+            for (int a = 0; a <= X; a++)
             {
                 // Load memory into the register
                 V[a] = memory[I + a];
@@ -590,7 +583,7 @@ bool Chip8::loadProgram(const char *file_path)
 
     // get buffer size
     fseek(program, 0, SEEK_END);
-    unsigned long program_size = ftell(program);
+    ulong program_size = ftell(program);
     rewind(program);
 
     // allocate a buffer
@@ -624,7 +617,7 @@ bool Chip8::loadProgram(const char *file_path)
     }
 
     // transfer the buffer contents into the emulator's memory
-    for (unsigned int i = 0; i < program_size; ++i)
+    for (uint i = 0; i < program_size; ++i)
     {
         // load into memory starting at 0x200
         memory[i + 0x200] = program_buffer[i];

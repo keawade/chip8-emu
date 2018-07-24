@@ -8,7 +8,7 @@ class Chip8
 public:
   int cycle; // Debugging tool
 
-  u_int16_t opcode;
+  // u_int16_t opcode;
   u_int8_t memory[4096];
 
   // General purpose 8-bit registers (V0 - VF)
@@ -44,6 +44,27 @@ public:
 
   // Keyboard state
   bool key[16];
+
+  union { // Provide easier interfaces for opcodes
+    std::uint16_t opcode;
+
+    struct {
+      uint N : 4;
+      uint Y : 4;
+      uint X : 4;
+      uint A : 4;
+    };
+
+    struct {
+      ushort low : 8;
+      ushort high : 8;
+    };
+
+    struct {
+      ushort NNN : 12;
+      uint NA : 4; 
+    };
+  };
 
   Chip8();
   ~Chip8();
