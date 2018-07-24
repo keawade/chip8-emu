@@ -247,12 +247,13 @@ void Chip8::emulateCycle()
         {
             // 8xy4 - ADD Vx, Vy
             // Set Vx = Vx + Vy, set VF = carry.
-            if (V[Y] > (0xFF - V[X]))
+            V[X] += V[Y];
+
+            if (V[X] > V[Y])
                 V[0xF] = 1; // carry
             else
                 V[0xF] = 0;
 
-            V[X] += V[Y];
             pc += 2;
             break;
         }
@@ -264,7 +265,7 @@ void Chip8::emulateCycle()
                 V[0xF] = 1;
             else
                 V[0xF] = 0;
-         
+
             V[X] -= V[Y];
             pc += 2;
             break;
@@ -275,11 +276,16 @@ void Chip8::emulateCycle()
             // Set Vx = Vx SHR 1.
             // Shifts VY right by one and stores the result to VX (VY remains unchanged). VF is set to the value of the least significant bit of VY before the shift.
 
-            // Store LSD of Vy in VF
-            V[0xF] = V[Y] & 1;
+            // Apparently a lot of modern interpreters ignore the docs for this and do this way:
+            V[0xF] = V[X] & 1;
+            V[X] /= 2;
 
-            // Store Vy >> 1 in Vx
-            V[X] = V[Y] >> 1;
+            // // "Correct" way:
+            // // Store LSD of Vy in VF
+            // V[0xF] = V[Y] & 1;
+            // // Store Vy >> 1 in Vx
+            // V[X] = V[Y] >> 1;
+
             pc += 2;
             break;
         }
@@ -288,13 +294,10 @@ void Chip8::emulateCycle()
             // 8xy7 - SUBN Vx, Vy
             // Set Vx = Vy - Vx, set VF = NOT borrow.
             if (V[X] > V[Y])
-            {
                 V[0xF] = 1;
-            }
             else
-            {
                 V[0xF] = 0;
-            }
+
             V[X] = V[Y] - V[X];
             pc += 2;
             break;
@@ -308,11 +311,14 @@ void Chip8::emulateCycle()
             // Store MSD of Vy in VF
             V[0xF] = V[Y] >> 7;
 
-            // Store Vy << 1 in Vx
-            V[X] = V[Y] << 1;
+            // Again, modern interpreters ignore the docs so... :(
+            V[X] = V[X] * 2;
 
-            // Store Vy << 1 in Vy
-            V[Y] = V[Y] << 1;
+            // // "Correct" way:
+            // // Store Vy << 1 in Vx
+            // V[X] = V[Y] << 1;
+            // // Store Vy << 1 in Vy
+            // V[Y] = V[Y] << 1;
             pc += 2;
             break;
         }
@@ -409,7 +415,7 @@ void Chip8::emulateCycle()
         {
             // Ex9E - SKP Vx
             // Skip next instruction if key with the value of Vx is pressed.
-            if (key[V[X]])
+            if (key[V[X]] != 0)
             {
                 pc += 2;
             }
@@ -420,7 +426,7 @@ void Chip8::emulateCycle()
         {
             // ExA1 - SKNP Vx
             // Skip next instruction if key with the value of Vx is not pressed.
-            if (!key[V[X]])
+            if (key[V[X]] == 0)
             {
                 pc += 2;
             }
@@ -455,6 +461,22 @@ void Chip8::emulateCycle()
         {
             // Fx0A - LD Vx, K
             // Wait for a key press, store the value of the key in Vx.
+
+            bool keyPressed = false;
+
+            for (uint i = 0; i < 16; i++)
+            {
+                if (key[i] != 0)
+                {
+                    V[X] = i;
+                    keyPressed = true;
+                }
+            }
+
+            // Repeat cycle if not pressed
+            if (!keyPressed)
+                return;
+
             pc += 2;
             break;
         }
@@ -490,7 +512,7 @@ void Chip8::emulateCycle()
         {
             // Fx29 - LD F, Vx
             // Set I = location of sprite for digit Vx.
-            I = memory[(X)*5];
+            I = V[X] * 5;
             pc += 2;
             break;
         }
@@ -510,9 +532,10 @@ void Chip8::emulateCycle()
         {
             // Fx55 - LD [I], Vx
             // Store registers V0 through Vx in memory starting at location I.
+            // Stores V0 to VX (including VX) in memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
 
             // For each register
-            for (int a = 0; a <= X; a++)
+            for (uint a = 0; a <= X; a++)
             {
                 // Save the register's data
                 memory[I + a] = V[a];
@@ -525,6 +548,8 @@ void Chip8::emulateCycle()
         {
             // Fx65 - LD Vx, [I]
             // Read registers V0 through Vx from memory starting at location I.
+            // Fills V0 to VX (including VX) with values from memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+
             // For each register
             for (int a = 0; a <= X; a++)
             {

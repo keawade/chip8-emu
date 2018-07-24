@@ -35,9 +35,9 @@ int main(int argc, char **argv)
         if (emulator.drawFlag)
         {
             // Loop through all the pixels
-            for (int y = 0; y < 32; ++y)
+            for (uint y = 0; y < 32; ++y)
             {
-                for (int x = 0; x < 64; ++x)
+                for (uint x = 0; x < 64; ++x)
                 {
                     // Move the ncurses cursor to that pixel
                     move(y, x);
