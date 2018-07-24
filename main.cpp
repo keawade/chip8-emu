@@ -34,6 +34,8 @@ int main(int argc, char **argv)
         // If we're supposed to draw this cycle
         if (emulator.drawFlag)
         {
+            clear();
+
             // Loop through all the pixels
             for (uint y = 0; y < 32; ++y)
             {
@@ -53,14 +55,14 @@ int main(int argc, char **argv)
 
             // Flip the draw flag
             emulator.drawFlag = false;
+
+            // Print ncurses view to the terminal
+            refresh();
+
+            this_thread::sleep_for(chrono::milliseconds(7));
         }
 
-        // Print ncurses view to the terminal
-        refresh();
-
         // emulator.setKeys();
-
-        this_thread::sleep_for(chrono::milliseconds(10));
     }
 
     // End curses mode
