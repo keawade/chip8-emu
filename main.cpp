@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
         // emulator.setKeys();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        this_thread::sleep_for(chrono::milliseconds(10));
     }
 
     // End curses mode

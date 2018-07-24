@@ -1,4 +1,6 @@
 programs/*
 !programs/.gitkeep
 
+debug.log
+
 output

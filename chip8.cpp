@@ -1,11 +1,23 @@
 #include <stdio.h>
 #include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
 
 #include "chip8.h"
 
-Chip8::Chip8() {}
+using namespace std;
 
-Chip8::~Chip8() {}
+Chip8::Chip8()
+{
+    cycle = 0; // Set cycle tracker to 0 (Only used for debugging)
+}
+
+Chip8::~Chip8()
+{
+    cycle = 0; // Set cycle tracker to 0 (Only used for debugging)
+}
 
 int16_t chip8_fontset[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -26,8 +38,20 @@ int16_t chip8_fontset[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
+void log(int cycle, string severity, string fnctn, string message)
+{
+    ofstream logfile;
+    logfile.open("debug.log", ios::app);
+    string c = to_string(cycle);
+    c.insert(c.begin(), 8 - c.length(), '0');
+    logfile << c + " " + severity + ": " + fnctn + " - " + message << endl;
+    // logfile.close();
+}
+
 void Chip8::initialize()
 {
+    log(cycle, "LOG", "Chip8::initialize", "initializing");
+
     pc = 0x200; // Program counter starts at 0x200
     opcode = 0; // Reset current opcode
     I = 0;      // Reset index register
@@ -62,11 +86,25 @@ void Chip8::initialize()
     sound_timer = 0;
 }
 
+template< typename T >
+std::string int_to_hex( T i )
+{
+  std::stringstream stream;
+  stream << "0x" 
+         << std::setfill ('0') << std::setw(sizeof(T)*2) 
+         << std::hex << i;
+  return stream.str();
+}
+
 void Chip8::emulateCycle()
 {
+    cycle++;
+
     // fetch opcode
     // Store both bytes of the opcode in a single two byte variable
     opcode = memory[pc] << 8 | memory[pc + 1];
+
+    log(cycle, "LOG", "Chip8::emulateCycle", int_to_hex(opcode));
 
     // decode and execute opcode
     switch (opcode & 0xF000)
@@ -79,7 +117,9 @@ void Chip8::emulateCycle()
         {
             // 00E0 - CLS
             // Clear the display.
-            // TODO
+            for (unsigned int i = 0; i < 2048; ++i)
+                gfx[i] = 0;
+            drawFlag = true;
             pc += 2;
             break;
         }
@@ -93,7 +133,8 @@ void Chip8::emulateCycle()
             break;
         }
         default:
-            printf("Unknown opcode [0x0000]: 0x%X\n", opcode);
+            // printf("Unknown opcode [0x0000]: 0x%X\n", opcode);
+            log(cycle, "ERR", "Chip8::emulateCycle", "Unknown opcode [0x0000]: 0x" + opcode);
             pc += 2;
         }
         break;
@@ -101,7 +142,7 @@ void Chip8::emulateCycle()
 
     case 0x1000: // 1nnn: JP addr - set program counter to nnn
     {
-        pc = opcode & 0x0FFF;
+        pc = opcode & 0x0FFF; // Jump to nnn
         break;
     }
 
@@ -109,9 +150,9 @@ void Chip8::emulateCycle()
     {
         // 2nnn - CALL addr
         // Call subroutine at nnn.
-        stack[sp] = pc;
-        ++sp;
-        pc = opcode & 0x0FFF;
+        stack[sp] = pc;       // Store current program counter
+        ++sp;                 // Bump the stack pointer
+        pc = opcode & 0x0FFF; // Jump to nnn
         break;
     }
 
@@ -279,7 +320,8 @@ void Chip8::emulateCycle()
         }
         default:
         {
-            printf("Unknown opcode [0x8000]: 8x%X\n", opcode);
+            // printf("Unknown opcode [0x8000]: 8x%X\n", opcode);
+            log(cycle, "ERR", "Chip8::emulateCycle", "Unknown opcode [0x8000]: 8x" + opcode);
             pc += 2;
             break;
         }
@@ -392,7 +434,8 @@ void Chip8::emulateCycle()
         }
         default:
         {
-            printf("Unknown opcode [0xE000]: Ex%X\n", opcode);
+            // printf("Unknown opcode [0xE000]: Ex%X\n", opcode);
+            log(cycle, "ERR", "Chip8::emulateCycle", "Unknown opcode [0xE000]: Ex" + opcode);
             pc += 2;
             break;
         }
@@ -500,7 +543,8 @@ void Chip8::emulateCycle()
 
         default:
         {
-            printf("Unknown opcode [0xF000]: Fx%X\n", opcode);
+            // printf("Unknown opcode [0xF000]: Fx%X\n", opcode);
+            log(cycle, "ERR", "Chip8::emulateCycle", "Unknown opcode [0xF000]: Fx" + opcode);
             pc += 2;
             break;
         }
@@ -522,7 +566,10 @@ void Chip8::emulateCycle()
     if (sound_timer > 0)
     {
         if (sound_timer == 1)
-            printf("BEEP!\n");
+        {
+            // printf("BEEP!\n");
+            // log(cycle, "TRC", "Chip8::emulateCycle", "Beep");
+        }
 
         --sound_timer;
     }
@@ -535,7 +582,8 @@ bool Chip8::loadProgram(const char *file_path)
     // verify file was loaded
     if (program == NULL)
     {
-        std::cerr << "[loadProgram] Failed to open program" << std::endl;
+        log(cycle, "ERR", "Chip8::loadProgram", "Failed to open program");
+        // std::cerr << "[loadProgram] Failed to open program" << std::endl;
         return false;
     }
 
@@ -550,7 +598,8 @@ bool Chip8::loadProgram(const char *file_path)
     // verify buffer was allocated
     if (program_buffer == NULL)
     {
-        std::cerr << "[loadProgram] Failed to allocate memory for program" << std::endl;
+        // std::cerr << "[loadProgram] Failed to allocate memory for program" << std::endl;
+        log(cycle, "ERR", "Chip8::loadProgram", "Failed to allocate memory for program");
         return false;
     }
 
@@ -560,14 +609,16 @@ bool Chip8::loadProgram(const char *file_path)
     // verify program can be read
     if (result != program_size)
     {
-        std::cerr << "[loadProgram] Failed to read program" << std::endl;
+        // std::cerr << "[loadProgram] Failed to read program" << std::endl;
+        log(cycle, "ERR", "Chip8::loadProgram", "Failed to read program");
         return false;
     }
 
     // verify program fits in memory
     if ((4096 - 0x200) < program_size)
     {
-        std::cerr << "[loadProgram] Program too large to fit in memory" << std::endl;
+        // std::cerr << "[loadProgram] Program too large to fit in memory" << std::endl;
+        log(cycle, "ERR", "Chip8::loadProgram", "Program too large to fit in memory");
         return false;
     }
 
