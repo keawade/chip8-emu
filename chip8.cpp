@@ -40,12 +40,11 @@ int16_t chip8_fontset[80] = {
 
 void log(int cycle, string severity, string fnctn, string message)
 {
-    ofstream logfile;
-    logfile.open("debug.log", ios::app);
-    string c = to_string(cycle);
-    c.insert(c.begin(), 8 - c.length(), '0');
-    logfile << c + " " + severity + ": " + fnctn + " - " + message << endl;
-    // logfile.close();
+    // ofstream logfile;
+    // logfile.open("debug.log", ios::app);
+    // string c = to_string(cycle);
+    // c.insert(c.begin(), 8 - c.length(), '0');
+    // logfile << c + " " + severity + ": " + fnctn + " - " + message << endl;
 }
 
 void Chip8::initialize()
@@ -540,6 +539,10 @@ void Chip8::emulateCycle()
                 // Save the register's data
                 memory[I + a] = V[a];
             }
+
+            // This conflicts with Wikipedia's description but matches BYTE Magazine Vol 3 Num 12 p110
+            I += X + 1;
+
             pc += 2;
             break;
         }
@@ -556,6 +559,10 @@ void Chip8::emulateCycle()
                 // Load memory into the register
                 V[a] = memory[I + a];
             }
+
+            // This conflicts with Wikipedia's description but matches BYTE Magazine Vol 3 Num 12 p110
+            I += X + 1;
+
             pc += 2;
             break;
         }
