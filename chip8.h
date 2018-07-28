@@ -43,7 +43,7 @@ public:
   bool drawFlag;
 
   // Keyboard state
-  bool key[16];
+  u_int8_t key[16];
 
   union { // Provide easier interfaces for opcodes
     std::uint16_t opcode;
@@ -71,6 +71,8 @@ public:
 
   void emulateCycle();
   bool loadProgram(const char *file_path);
+  void clearKeys();
+  void setKey(char k);
 };
 
 #endif // CHIP_8_H

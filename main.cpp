@@ -16,9 +16,9 @@ Chip8 emulator;
 int main(int argc, char **argv)
 {
     // Start curses mode
-    initscr();
-
-    // setupInput();
+    auto window = initscr();
+    noecho();
+    nodelay(window, 1);
 
     // Initalize Chip-8 system
     emulator.initialize();
@@ -28,6 +28,11 @@ int main(int argc, char **argv)
 
     for (;;)
     {
+        emulator.clearKeys();
+
+        char c = getch();
+        emulator.setKey(c);
+
         // Emulate a cycle
         emulator.emulateCycle();
 
@@ -61,8 +66,6 @@ int main(int argc, char **argv)
 
             this_thread::sleep_for(chrono::milliseconds(7));
         }
-
-        // emulator.setKeys();
     }
 
     // End curses mode

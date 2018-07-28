@@ -38,6 +38,93 @@ int16_t chip8_fontset[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
+void Chip8::clearKeys()
+{
+    for (int i = 0; i < 16; i++)
+        key[i] = 0;
+}
+
+void Chip8::setKey(char k)
+{
+    //    1 2 3 C    ->    1 2 3 4
+    //    4 5 6 D    ->    Q W E R
+    //    7 8 9 E    ->    A S D F
+    //    0 A B F    ->    Z X C V
+
+    // clearKeys();
+
+    switch (k)
+    {
+    // 0
+    case 'z':
+        key[0x0] = 1;
+        break;
+    // 1
+    case '1':
+        key[0x1] = 1;
+        break;
+    // 2
+    case '2':
+        key[0x2] = 1;
+        break;
+    // 3
+    case '3':
+        key[0x3] = 1;
+        break;
+    // 4
+    case 'q':
+        key[0x4] = 1;
+        break;
+    // 5
+    case 'w':
+        key[0x5] = 1;
+        break;
+    // 6
+    case 'e':
+        key[0x6] = 1;
+        break;
+    // 7
+    case 'a':
+        key[0x7] = 1;
+        break;
+    // 8
+    case 's':
+        key[0x8] = 1;
+        break;
+    // 9
+    case 'd':
+        key[0x9] = 1;
+        break;
+    // a
+    case 'x':
+        key[0xA] = 1;
+        break;
+    // b
+    case 'c':
+        key[0xB] = 1;
+        break;
+    // c
+    case '4':
+        key[0xC] = 1;
+        break;
+    // d
+    case 'r':
+        key[0xD] = 1;
+        break;
+    // e
+    case 'f':
+        key[0xE] = 1;
+        break;
+    // f
+    case 'v':
+        key[0xF] = 1;
+        break;
+    default:
+        // do nothing
+        break;
+    }
+}
+
 void log(int cycle, string severity, string fnctn, string message)
 {
     // ofstream logfile;
@@ -69,8 +156,7 @@ void Chip8::initialize()
         V[i] = 0;
 
     // initialize clear keyboard state
-    for (uint i = 0; i < 16; ++i)
-        key[i] = 0;
+    clearKeys();
 
     // initialize clear memory
     for (uint i = 0; i < 4096; ++i)
