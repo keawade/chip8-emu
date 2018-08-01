@@ -1,3 +1,5 @@
+import * as _ from 'lodash';
+
 /**
  * Chip-8 Emulator
  */
@@ -83,26 +85,21 @@ class Chip8 {
     this.sp = 0;
 
     // Clear stack
-    this.stack = [];
-    this.stack.fill(0, 0, 16);
+    this.stack = _.fill(Array(16), 0);
 
     // Clear display
-    this.graphics = [];
-    this.graphics.fill([].fill(0, 0, 32), 0, 64);
+    this.graphics = _.fill(Array(64), _.fill(Array(32), false));
     this.drawFlag = false;
 
     // Clear Registers
-    this.V = [];
-    this.V.fill(0, 0, 16);
+    this.V = _.fill(Array(16), 0);
     this.I = 0;
 
     // Clear keyboard state
-    this.keyboard = [];
-    this.keyboard.fill(false, 0, 16);
+    this.keyboard = _.fill(Array(16), false);
 
     // Clear memory
-    this.memory = [];
-    this.memory.fill(0, 0, 4096);
+    this.memory = _.fill(Array(0x1000), 0);
 
     // Load font set
     this.memory.splice(0, FONTSET.length, ...FONTSET);
@@ -113,7 +110,7 @@ class Chip8 {
   }
 
   loadProgram = (program: string) => {
-    this.memory.splice(200, program.length, ...program.split('').map(n => parseInt(n, 16)));
+    this.memory.splice(0x200, program.length, ...program.split('').map(n => parseInt(n, 16)));
   }
 
   emulateCycle = () => {
