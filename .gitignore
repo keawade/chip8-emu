@@ -1,6 +1,4 @@
 programs/*
 !programs/.gitkeep
 
-debug.log
-
-output
+node_modules/
