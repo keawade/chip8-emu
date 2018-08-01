@@ -81,10 +81,6 @@ class Chip8 {
    */
   public keyboard: boolean[];
 
-  constructor() {
-    this.loadProgram(programs[0])
-  }
-
   /**
    * Initializes/resets all the Chip-8 memory, stack, registers, screen, timers, and key states.
    */
