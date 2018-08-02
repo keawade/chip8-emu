@@ -125,7 +125,7 @@ class Chip8 {
    */
   public loadProgram = (program: Prog) => {
     console.log('[Chip8] loading program', program.name);
- 
+
     this.memory.splice(0x200, program.code.length, ...program.code.split('').map(n => parseInt(n, 16)));
   }
 
@@ -145,11 +145,48 @@ class Chip8 {
     this.keyboard = _.fill(Array(16), false);
   }
 
+  private uknownOpcode = (opcode: number) => {
+    console.warn('[Chip8] emulateCycle - Unknown opcode: 0x' + opcode.toString(16));
+  }
+
   /**
    * Reads and executes the next opcode.
    */
   public emulateCycle = () => {
     this.cycle += 1;
+
+    this.opcode = this.memory[this.pc] << 8 | this.memory[this.pc + 1];
+
+    switch (this.opcode & 0xF000) {
+      case 0x0000:
+        switch (this.opcode & 0x00FF) {
+          case 0x00E0:
+            // 00E0 - CLS
+            // Clear the display.
+
+            this.graphics = _.fill(Array(64), _.fill(Array(32), false));
+            this.drawFlag = true;
+
+            this.pc += 2;
+            break;
+          case 0x00EE:
+            // 00EE - RET
+            // Return from a subroutine.
+
+            this.sp -= 1;
+            this.pc = this.stack[this.sp];
+            this.pc += 2;
+            break;
+          default:
+            this.uknownOpcode(this.opcode);
+            break;
+        }
+        break;
+
+      default:
+        this.uknownOpcode(this.opcode);
+        break;
+    }
   }
 }
 
