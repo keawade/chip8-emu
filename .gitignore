@@ -1,4 +1,6 @@
-programs/*
-!programs/.gitkeep
-
 node_modules/
+yarn-error.log
+
+dist/
+
+.rpt2_cache/

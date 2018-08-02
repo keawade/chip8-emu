@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
-import { Prog, programs } from './programs';
+import { Prog } from './programs';
 
 /**
  * Chip-8 Emulator
  */
-class Chip8 {
+export class Chip8 {
   /**
    * Cycle counter for debugging.
    */
@@ -75,12 +75,7 @@ class Chip8 {
    */
   public keyboard: boolean[];
 
-  /**
-   * Initializes/resets all the Chip-8 memory, stack, registers, screen, timers, and key states.
-   */
-  public initialize = () => {
-    console.log('[Chip8] initializing virtual hardware');
-
+  constructor() {
     this.cycle = 0;
 
     this.pc = 0x200;
@@ -99,7 +94,7 @@ class Chip8 {
     this.I = 0;
 
     // Clear keyboard state
-    this.clearKeys();
+    this.keyboard = _.fill(Array(16), false);
 
     // Clear memory
     this.memory = _.fill(Array(0x1000), 0);
@@ -602,5 +597,3 @@ const FONTSET = [
   0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
   0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 ];
-
-export default Chip8;
