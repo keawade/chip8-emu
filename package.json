@@ -1,18 +1,21 @@
 {
-  "name": "chip8-emu",
-  "version": "1.0.0",
+  "name": "@keawade/chip8-emu",
+  "version": "0.1.0",
   "description": "A Chip-8 emulator",
+  "repository": "git@gitlab.com:keawade/chip8-emu.git",
+  "author": "Keith Wade <keawade@protonmail.com>",
+  "license": "MIT",
+
   "main": "dist/index.js",
   "umd:main": "dist/index.umd.js",
   "module": "dist/index.m.js",
   "source": "src/index.ts",
-  "repository": "git@gitlab.com:keawade/chip8-emu.git",
-  "author": "Keith Wade <keawade@protonmail.com>",
-  "license": "MIT",
+
   "scripts": {
     "build": "microbundle",
     "dev": "microbundle watch"
   },
+
   "devDependencies": {
     "@types/lodash": "^4.14.115",
     "microbundle": "^0.6.0",
