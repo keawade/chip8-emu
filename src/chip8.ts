@@ -24,7 +24,7 @@ export class Chip8 {
 
   /**
    * 16-bit register I.
-   * This register is generally used to store memory addresses, so only the opcode & 0x00FFest (rightmost) 12 bits are usually used.
+   * This register is generally used to store memory addresses, so only the lowest (rightmost) 12 bits are usually used.
    */
   private I: number;
 
@@ -86,7 +86,7 @@ export class Chip8 {
     this.stack = _.fill(Array(16), 0);
 
     // Clear display
-    this.graphics = _.fill(Array(64), _.fill(Array(32), false));
+    this.graphics = _.fill(Array(32), _.fill(Array(64), false));
     this.drawFlag = false;
 
     // Clear Registers
@@ -120,10 +120,12 @@ export class Chip8 {
   /**
    * Sets a key state to "On".
    * @param {string} key - The key to set.
+   * @param {boolean} state - The state of the key
    */
-  public setKey = (key: string) => {
-    // TODO: Set keyboard state
-    console.warn('[Chip8] setKey not yet implemented!');
+  public setKey = (key: string, state: boolean) => {
+    const keys = ['1', '2', '3', 'C', '4', '5', '6', 'D', '7', '8', '9', 'E', 'A', '0', 'B', 'F'];
+    const toPress = keys.sort().indexOf(key.toLowerCase());
+    this.keyboard[toPress] = state;
   }
 
   /**
