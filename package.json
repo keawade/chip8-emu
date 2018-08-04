@@ -1,6 +1,6 @@
 {
   "name": "@keawade/chip8-emu",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "A Chip-8 emulator",
   "repository": "git@gitlab.com:keawade/chip8-emu.git",
   "author": "Keith Wade <keawade@protonmail.com>",
