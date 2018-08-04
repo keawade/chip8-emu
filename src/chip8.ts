@@ -497,7 +497,7 @@ export class Chip8 {
             if ((pixel & 0x80) > 0) {
               // If a pixel is to be toggled
               // Check if if the value is already on
-              if (this.setPixel(x + xline, y + yline)) {
+              if (this.setPixel(this.V[x] + xline, this.V[y] + yline)) {
                 // if (gfx[(V[X] + xline + ((V[Y] + yline) * 64))] == 1)
                 // If it is already on, set VF to 1
                 this.V[0xF] = 1;
