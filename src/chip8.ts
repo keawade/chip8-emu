@@ -5,11 +5,6 @@ import * as _ from 'lodash';
  */
 export class Chip8 {
   /**
-   * Cycle counter for debugging.
-   */
-  private cycle: number;
-
-  /**
    * 4096 bytes of memory.
    * Handles all storage other than the stack and registers.
    */
@@ -75,8 +70,6 @@ export class Chip8 {
   public keyboard: boolean[];
 
   constructor() {
-    this.cycle = 0;
-
     this.pc = 0x200;
     this.I = 0;
     this.sp = 0;
@@ -145,8 +138,6 @@ export class Chip8 {
    * Reads and executes the next opcode.
    */
   public emulateCycle = () => {
-    this.cycle += 1;
-
     /**
      * 16-bit operation code.
      * Stores the current opcode.
@@ -164,7 +155,7 @@ export class Chip8 {
             // 00E0 - CLS
             // Clear the display.
 
-            this.graphics = _.fill(Array(64), _.fill(Array(32), false));
+            this.graphics = _.fill(Array(32), _.fill(Array(64), false));
             this.drawFlag = true;
 
             this.pc += 2;
