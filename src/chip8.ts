@@ -456,30 +456,33 @@ export class Chip8 {
         // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
         this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - DRW Vx, Vy, nibble');
 
+        const spriteHeight = opcode & 0x000F;
+
         let pixel;
 
         // Reset VF. We'll set this to 1 later if there is a collision.
         this.V[0xF] = 0;
 
         // For every line on the y axis
-        for (let yline = 0; yline < (opcode & 0x000F); yline++) {
+        for (let yline = 0; yline < spriteHeight; yline++) {
           // Get the pixel data from memory
           pixel = this.memory[this.I + yline];
           for (let xline = 0; xline < 8; xline++) {
             // 0x80 == 0b10000000
             // For each x value, check if it is to be toggled (pixel AND current value from mem != 0)
-            if ((pixel & (0x80 >> xline)) !== 0) {
+            if ((pixel & 0x80) > 0) {
               // If a pixel is to be toggled
               // Check if if the value is already on
-              if (this.graphics[this.V[x] + xline][this.V[y] + yline] === true) {
+              if (!!this.graphics[this.V[x] + xline][this.V[y] + yline]) {
                 // if (gfx[(V[X] + xline + ((V[Y] + yline) * 64))] == 1)
                 // If it is already on, set VF to 1
                 this.V[0xF] = 1;
               }
-              // XOR the given value with the new value
-              // gfx[V[X] + xline + ((V[Y] + yline) * 64)] ^= 1;
-              this.graphics[this.V[x] + xline][this.V[y] + yline] !== true; // TODO: Verify
             }
+            // XOR the given value with the new value
+            // gfx[V[X] + xline + ((V[Y] + yline) * 64)] ^= 1;
+            // this.graphics[this.V[x] + xline][this.V[y] + yline] !== true; // TODO: Verify
+            pixel <<= 1;
           }
         }
 
