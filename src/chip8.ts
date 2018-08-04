@@ -136,7 +136,7 @@ export class Chip8 {
     this.keyboard = _.fill(Array(16), false);
   }
 
-  private uknownOpcode = (opcode: number) => {
+  private unknownOpcode = (opcode: number) => {
     console.warn('[Chip8] emulateCycle - Unknown opcode: 0x' + opcode.toString(16));
     this.pc += 2;
   }
@@ -152,6 +152,10 @@ export class Chip8 {
      * Stores the current opcode.
      */
     const opcode = this.memory[this.pc] << 8 | this.memory[this.pc + 1];
+    const x = (opcode & 0x0F00) >> 8;
+    const y = (opcode & 0x00F0) >> 4;
+    const kk = opcode & 0x00FF;
+    const nnn = opcode & 0x0FFF;
 
     switch (opcode & 0xF000) {
       case 0x0000:
@@ -165,6 +169,7 @@ export class Chip8 {
 
             this.pc += 2;
             break;
+
           case 0x00EE:
             // 00EE - RET
             // Return from a subroutine.
@@ -174,8 +179,9 @@ export class Chip8 {
 
             this.pc += 2;
             break;
+
           default:
-            this.uknownOpcode(opcode);
+            this.unknownOpcode(opcode);
             break;
         }
         break;
@@ -183,7 +189,7 @@ export class Chip8 {
       case 0x1000:
         // 1nnn: JP addr - set program counter to nnn
 
-        this.pc = opcode & 0x0FFF;
+        this.pc = nnn;
         break;
 
       case 0x2000:
@@ -192,14 +198,14 @@ export class Chip8 {
 
         this.stack[this.sp] = this.pc;
         this.sp += 1;
-        this.pc = opcode & 0x0FFF;
+        this.pc = nnn;
         break;
 
       case 0x3000:
         // 3xkk - SE Vx, byte
         // Skip next instruction if Vx = kk.
 
-        if (this.V[(opcode & 0x0F00) >>> 8] == (opcode & 0x00FF)) {
+        if (this.V[x] == kk) {
           this.pc += 2;
         }
 
@@ -210,7 +216,7 @@ export class Chip8 {
         // 4xkk - SNE Vx, byte
         // Skip next instruction if Vx != kk.
 
-        if (this.V[(opcode & 0x0F00) >>> 8] != (opcode & 0x00FF)) {
+        if (this.V[x] != kk) {
           this.pc += 2;
         }
 
@@ -221,7 +227,7 @@ export class Chip8 {
         // 5xy0 - SE Vx, Vy
         // Skip next instruction if Vx = Vy.
 
-        if (this.V[(opcode & 0x0F00) >>> 8] == this.V[(opcode & 0x00F0) >>> 4]) {
+        if (this.V[x] == this.V[y]) {
           this.pc += 2;
         }
 
@@ -232,7 +238,7 @@ export class Chip8 {
         // 6xkk - LD Vx, byte
         // Set Vx = kk.
 
-        this.V[(opcode & 0x0F00) >>> 8] = opcode & 0x00FF;
+        this.V[x] = kk;
 
         this.pc += 2;
         break;
@@ -241,7 +247,7 @@ export class Chip8 {
         // 7xkk - ADD Vx, byte
         // Set Vx = Vx + kk.
 
-        this.V[(opcode & 0x0F00) >>> 8] += opcode & 0x00FF;
+        this.V[x] += kk;
 
         this.pc += 2;
         break;
@@ -249,10 +255,10 @@ export class Chip8 {
       case 0x8000:
         switch (opcode & 0x000F) {
           case 0x0000:
-            // 8xy0 - LD Vx, Vythis.V[(opcode & 0x00F0) >>> 4]
+            // 8xy0 - LD Vx, Vythis.V[y]
             // Set Vx = Vy.
 
-            this.V[(opcode & 0x0F00) >>> 8] = this.V[(opcode & 0x00F0) >>> 4];
+            this.V[x] = this.V[y];
 
             this.pc += 2;
             break;
@@ -261,7 +267,7 @@ export class Chip8 {
             // 8xy1 - OR Vx, Vy
             // Set Vx = Vx OR Vy.
 
-            this.V[(opcode & 0x0F00) >>> 8] = this.V[(opcode & 0x0F00) >>> 8] | this.V[(opcode & 0x00F0) >>> 4];
+            this.V[x] = this.V[x] | this.V[y];
 
             this.pc += 2;
             break;
@@ -270,7 +276,7 @@ export class Chip8 {
             // 8xy2 - AND Vx, Vy
             // Set Vx = Vx AND Vy.
 
-            this.V[(opcode & 0x0F00) >>> 8] = this.V[(opcode & 0x0F00) >>> 8] & this.V[(opcode & 0x00F0) >>> 4];
+            this.V[x] = this.V[x] & this.V[y];
 
             this.pc += 2;
             break;
@@ -279,7 +285,7 @@ export class Chip8 {
             // 8xy3 - XOR Vx, Vy
             // Set Vx = Vx XOR Vy.
 
-            this.V[(opcode & 0x0F00) >>> 8] = this.V[(opcode & 0x0F00) >>> 8] ^ this.V[(opcode & 0x00F0) >>> 4];
+            this.V[x] = this.V[x] ^ this.V[y];
 
             this.pc += 2;
             break;
@@ -288,9 +294,9 @@ export class Chip8 {
             // 8xy4 - ADD Vx, Vy
             // Set Vx = Vx + Vy, set VF = carry.
 
-            this.V[(opcode & 0x0F00) >>> 8] += this.V[(opcode & 0x00F0) >>> 4];
+            this.V[x] += this.V[y];
 
-            if (this.V[(opcode & 0x0F00) >>> 8] > this.V[(opcode & 0x00F0) >>> 4])
+            if (this.V[x] > this.V[y])
               this.V[0xF] = 1; // carry
             else
               this.V[0xF] = 0;
@@ -302,12 +308,12 @@ export class Chip8 {
             // 8xy5 - SUB Vx, Vy
             // Set Vx = Vx - Vy, set VF = NOT borrow.
 
-            if (this.V[(opcode & 0x0F00) >>> 8] > this.V[(opcode & 0x00F0) >>> 4])
+            if (this.V[x] > this.V[y])
               this.V[0xF] = 1;
             else
               this.V[0xF] = 0;
 
-            this.V[(opcode & 0x0F00) >>> 8] -= this.V[(opcode & 0x00F0) >>> 4];
+            this.V[x] -= this.V[y];
 
             this.pc += 2;
             break;
@@ -317,8 +323,8 @@ export class Chip8 {
             // Set Vx = Vx SHR 1.
             // Shifts VY right by one and stores the result to VX (VY remains unchanged). VF is set to the value of the least significant bit of VY before the shift.
 
-            this.V[0xF] = this.V[(opcode & 0x0F00) >>> 8] & 1;
-            this.V[(opcode & 0x0F00) >>> 8] /= 2;
+            this.V[0xF] = this.V[x] & 1;
+            this.V[x] /= 2;
 
             this.pc += 2;
             break;
@@ -327,12 +333,12 @@ export class Chip8 {
             // 8xy7 - SUBN Vx, Vy
             // Set Vx = Vy - Vx, set VF = NOT borrow.
 
-            if (this.V[(opcode & 0x0F00) >>> 8] > this.V[(opcode & 0x00F0) >>> 4])
+            if (this.V[x] > this.V[y])
               this.V[0xF] = 1;
             else
               this.V[0xF] = 0;
 
-            this.V[(opcode & 0x0F00) >>> 8] = this.V[(opcode & 0x00F0) >>> 4] - this.V[(opcode & 0x0F00) >>> 8];
+            this.V[x] = this.V[y] - this.V[x];
 
             this.pc += 2;
             break;
@@ -342,15 +348,15 @@ export class Chip8 {
             // Set Vy = Vx = Vy SHL 1.
             // Shifts VY left by one and copies the result to VX. VF is set to the value of the most significant bit of VY before the shift.
 
-            this.V[0xF] = this.V[(opcode & 0x00F0) >>> 4] >> 7;
+            this.V[0xF] = this.V[y] >> 7;
 
-            this.V[(opcode & 0x0F00) >>> 8] = this.V[(opcode & 0x0F00) >>> 8] * 2;
+            this.V[x] = this.V[x] * 2;
 
             this.pc += 2;
             break;
 
           default:
-            this.uknownOpcode(opcode);
+            this.unknownOpcode(opcode);
             break;
         }
         break;
@@ -359,7 +365,7 @@ export class Chip8 {
         // 9xy0 - SNE Vx, Vy
         // Skip next instruction if Vx != Vy.
 
-        if (this.V[(opcode & 0x0F00) >>> 8] != this.V[(opcode & 0x00F0) >>> 4]) {
+        if (this.V[x] != this.V[y]) {
           this.pc += 2;
         }
 
@@ -370,7 +376,7 @@ export class Chip8 {
         // Annn - LD I, addr
         // Set I = nnn.
 
-        this.I = opcode & 0x0FFF;
+        this.I = nnn;
 
         this.pc += 2;
         break;
@@ -379,7 +385,7 @@ export class Chip8 {
         // Bnnn - JP V0, addr
         // Jump to location nnn + V0.
 
-        this.pc = (opcode & 0x0FFF) + this.V[0x0];
+        this.pc = nnn + this.V[0x0];
 
         break;
 
@@ -387,7 +393,7 @@ export class Chip8 {
         // Cxkk - RND Vx, byte
         // Set Vx = random byte AND kk.
 
-        this.V[(opcode & 0x0F00) >>> 8] = (Math.floor(Math.random() * 0xFF)) & (opcode & 0x00FF);
+        this.V[x] = (Math.floor(Math.random() * 0xFF)) & kk;
 
         this.pc += 2;
         break;
@@ -410,14 +416,14 @@ export class Chip8 {
             if ((pixel & (0x80 >> xline)) !== 0) {
               // If a pixel is to be toggled
               // Check if if the value is already on
-              if (this.graphics[this.V[(opcode & 0x0F00) >>> 8] + xline][this.V[(opcode & 0x00F0) >>> 4] + yline] === true) {
+              if (this.graphics[this.V[x] + xline][this.V[y] + yline] === true) {
                 // if (gfx[(V[X] + xline + ((V[Y] + yline) * 64))] == 1)
                 // If it is already on, set VF to 1
                 this.V[0xF] = 1;
               }
               // XOR the given value with the new value
               // gfx[V[X] + xline + ((V[Y] + yline) * 64)] ^= 1;
-              this.graphics[this.V[(opcode & 0x0F00) >>> 8] + xline][this.V[(opcode & 0x00F0) >>> 4] + yline] !== true; // TODO: Verify
+              this.graphics[this.V[x] + xline][this.V[y] + yline] !== true; // TODO: Verify
             }
           }
         }
@@ -434,7 +440,7 @@ export class Chip8 {
             // Ex9E - SKP Vx
             // Skip next instruction if key with the value of Vx is pressed.
 
-            if (this.keyboard[this.V[(opcode & 0x0F00) >>> 8]] === true) {
+            if (this.keyboard[this.V[x]] === true) {
               this.pc += 2;
             }
 
@@ -445,7 +451,7 @@ export class Chip8 {
             // ExA1 - SKNP Vx
             // Skip next instruction if key with the value of Vx is not pressed.
 
-            if (this.keyboard[this.V[(opcode & 0x0F00) >>> 8]] === false) {
+            if (this.keyboard[this.V[x]] === false) {
               this.pc += 2;
             }
 
@@ -453,7 +459,7 @@ export class Chip8 {
             break;
 
           default:
-            this.uknownOpcode(opcode);
+            this.unknownOpcode(opcode);
             break;
         }
         break;
@@ -464,7 +470,7 @@ export class Chip8 {
             // Fx07 - LD Vx, DT
             // Set Vx = delay timer value.
 
-            this.V[(opcode & 0x0F00) >>> 8] = this.delay_timer;
+            this.V[x] = this.delay_timer;
 
             this.pc += 2;
             break;
@@ -477,7 +483,7 @@ export class Chip8 {
 
             for (let i = 0; i < 16; i++) {
               if (this.keyboard[i] === true) {
-                this.V[(opcode & 0x0F00) >>> 8] = i;
+                this.V[x] = i;
                 keyPressed = true;
               }
             }
@@ -493,7 +499,7 @@ export class Chip8 {
             // Fx15 - LD DT, Vx
             // Set delay timer = Vx.
 
-            this.delay_timer = this.V[(opcode & 0x0F00) >>> 8];
+            this.delay_timer = this.V[x];
 
             this.pc += 2;
             break;
@@ -502,7 +508,7 @@ export class Chip8 {
             // Fx18 - LD ST, Vx
             // Set sound timer = Vx.
 
-            this.sound_timer = this.V[(opcode & 0x0F00) >>> 8];
+            this.sound_timer = this.V[x];
 
             this.pc += 2;
             break;
@@ -511,7 +517,7 @@ export class Chip8 {
             // Fx1E - ADD I, Vx
             // Set I = I + Vx.
 
-            this.I += this.V[(opcode & 0x0F00) >>> 8];
+            this.I += this.V[x];
 
             this.pc += 2;
             break;
@@ -519,16 +525,16 @@ export class Chip8 {
           case 0x0029:
             // Fx29 - LD F, Vx
             // Set I = location of sprite for digit Vx.
-            this.I = this.V[(opcode & 0x0F00) >>> 8] * 5;
+            this.I = this.V[x] * 5;
             this.pc += 2;
             break;
 
           case 0x0033:
             // Fx33 - LD B, Vx
             // Store BCD representation of Vx in memory locations I, I+1, and I+2.
-            this.memory[this.I] = this.V[(opcode & 0x0F00) >>> 8] / 100;
-            this.memory[this.I + 1] = (this.V[(opcode & 0x0F00) >>> 8] / 10) % 10;
-            this.memory[this.I + 2] = (this.V[(opcode & 0x0F00) >>> 8] % 100) % 10;
+            this.memory[this.I] = this.V[x] / 100;
+            this.memory[this.I + 1] = (this.V[x] / 10) % 10;
+            this.memory[this.I + 2] = (this.V[x] % 100) % 10;
             this.pc += 2;
             break;
 
@@ -538,13 +544,13 @@ export class Chip8 {
             // Stores V0 to VX (including VX) in memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
 
             // For each register
-            for (let a = 0; a <= ((opcode & 0x0F00) >>> 8); a++) {
+            for (let a = 0; a <= (x); a++) {
               // Save the register's data
               this.memory[this.I + a] = this.V[a];
             }
 
             // This conflicts with Wikipedia's description but matches BYTE Magazine Vol 3 Num 12 p110
-            this.I += ((opcode & 0x0F00) >>> 8) + 1;
+            this.I += (x) + 1;
 
             this.pc += 2;
             break;
@@ -555,25 +561,25 @@ export class Chip8 {
             // Fills V0 to VX (including VX) with values from memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
 
             // For each register
-            for (let a = 0; a <= ((opcode & 0x0F00) >>> 8); a++) {
+            for (let a = 0; a <= (x); a++) {
               // Load memory into the register
               this.V[a] = this.memory[this.I + a];
             }
 
             // This conflicts with Wikipedia's description but matches BYTE Magazine Vol 3 Num 12 p110
-            this.I += ((opcode & 0x0F00) >>> 8) + 1;
+            this.I += (x) + 1;
 
             this.pc += 2;
             break;
 
           default:
-            this.uknownOpcode(opcode);
+            this.unknownOpcode(opcode);
             break;
         }
         break;
 
       default:
-        this.uknownOpcode(opcode);
+        this.unknownOpcode(opcode);
         break;
     }
   }
