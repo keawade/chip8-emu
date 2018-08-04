@@ -1,5 +1,12 @@
 import * as _ from 'lodash';
 
+enum LogLevels {
+  ERROR = 0,
+  WARN,
+  DEBUG,
+  ALL,
+}
+
 /**
  * Chip-8 Emulator
  */
@@ -69,7 +76,14 @@ export class Chip8 {
    */
   public keyboard: boolean[];
 
-  constructor() {
+  /**
+   * Current Loglevel.
+   * ERROR, WARN, DEBUG, ALL
+   */
+  public loglevel: LogLevels;
+
+  constructor(loglevel?: LogLevels) {
+    this.loglevel = !!loglevel ? loglevel : LogLevels.ERROR;
     this.pc = 0x200;
     this.I = 0;
     this.sp = 0;
@@ -129,9 +143,7 @@ export class Chip8 {
     this.keyboard = _.fill(Array(16), false);
   }
 
-  private unknownOpcode = (opcode: number) => {
-    console.warn('[Chip8] emulateCycle - Unknown opcode: 0x' + opcode.toString(16));
-    this.pc += 2;
+  private log = (level: LogLevels, message: string) => {
   }
 
   /**
@@ -143,6 +155,7 @@ export class Chip8 {
      * Stores the current opcode.
      */
     const opcode = this.memory[this.pc] << 8 | this.memory[this.pc + 1];
+
     const x = (opcode & 0x0F00) >> 8;
     const y = (opcode & 0x00F0) >> 4;
     const kk = opcode & 0x00FF;
@@ -154,6 +167,7 @@ export class Chip8 {
           case 0x00E0:
             // 00E0 - CLS
             // Clear the display.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - CLS');
 
             this.graphics = _.fill(Array(32), _.fill(Array(64), false));
             this.drawFlag = true;
@@ -164,6 +178,7 @@ export class Chip8 {
           case 0x00EE:
             // 00EE - RET
             // Return from a subroutine.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - RET');
 
             this.sp -= 1;
             this.pc = this.stack[this.sp];
@@ -172,13 +187,15 @@ export class Chip8 {
             break;
 
           default:
-            this.unknownOpcode(opcode);
+            this.log(LogLevels.ERROR, '[Chip8] emulateCycle - Unknown opcode: 0x' + opcode.toString(16));
+            this.pc += 2;
             break;
         }
         break;
 
       case 0x1000:
         // 1nnn: JP addr - set program counter to nnn
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - JP');
 
         this.pc = nnn;
         break;
@@ -186,6 +203,7 @@ export class Chip8 {
       case 0x2000:
         // 2nnn - CALL addr
         // Call subroutine at nnn.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - CALL');
 
         this.stack[this.sp] = this.pc;
         this.sp += 1;
@@ -195,6 +213,7 @@ export class Chip8 {
       case 0x3000:
         // 3xkk - SE Vx, byte
         // Skip next instruction if Vx = kk.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SE Vx, byte');
 
         if (this.V[x] == kk) {
           this.pc += 2;
@@ -206,6 +225,7 @@ export class Chip8 {
       case 0x4000:
         // 4xkk - SNE Vx, byte
         // Skip next instruction if Vx != kk.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SNE Vx, byte');
 
         if (this.V[x] != kk) {
           this.pc += 2;
@@ -217,6 +237,7 @@ export class Chip8 {
       case 0x5000:
         // 5xy0 - SE Vx, Vy
         // Skip next instruction if Vx = Vy.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SE Vx, Vy');
 
         if (this.V[x] == this.V[y]) {
           this.pc += 2;
@@ -228,6 +249,7 @@ export class Chip8 {
       case 0x6000:
         // 6xkk - LD Vx, byte
         // Set Vx = kk.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD Vx, byte');
 
         this.V[x] = kk;
 
@@ -237,6 +259,7 @@ export class Chip8 {
       case 0x7000:
         // 7xkk - ADD Vx, byte
         // Set Vx = Vx + kk.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - ADD Vx, byte');
 
         this.V[x] += kk;
 
@@ -246,8 +269,9 @@ export class Chip8 {
       case 0x8000:
         switch (opcode & 0x000F) {
           case 0x0000:
-            // 8xy0 - LD Vx, Vythis.V[y]
+            // 8xy0 - LD Vx, Vy
             // Set Vx = Vy.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD Vx, Vy');
 
             this.V[x] = this.V[y];
 
@@ -257,6 +281,7 @@ export class Chip8 {
           case 0x0001:
             // 8xy1 - OR Vx, Vy
             // Set Vx = Vx OR Vy.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - OR Vx, Vy');
 
             this.V[x] = this.V[x] | this.V[y];
 
@@ -266,6 +291,7 @@ export class Chip8 {
           case 0x0002:
             // 8xy2 - AND Vx, Vy
             // Set Vx = Vx AND Vy.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - AND Vx, Vy');
 
             this.V[x] = this.V[x] & this.V[y];
 
@@ -275,6 +301,7 @@ export class Chip8 {
           case 0x0003:
             // 8xy3 - XOR Vx, Vy
             // Set Vx = Vx XOR Vy.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - XOR Vx, Vy');
 
             this.V[x] = this.V[x] ^ this.V[y];
 
@@ -284,6 +311,7 @@ export class Chip8 {
           case 0x0004:
             // 8xy4 - ADD Vx, Vy
             // Set Vx = Vx + Vy, set VF = carry.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - ADD Vx, Vy');
 
             this.V[x] += this.V[y];
 
@@ -298,6 +326,7 @@ export class Chip8 {
           case 0x0005:
             // 8xy5 - SUB Vx, Vy
             // Set Vx = Vx - Vy, set VF = NOT borrow.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SUB Vx, Vy');
 
             if (this.V[x] > this.V[y])
               this.V[0xF] = 1;
@@ -313,6 +342,7 @@ export class Chip8 {
             // 8xy6 - SHR Vx {, Vy}
             // Set Vx = Vx SHR 1.
             // Shifts VY right by one and stores the result to VX (VY remains unchanged). VF is set to the value of the least significant bit of VY before the shift.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SHR Vx');
 
             this.V[0xF] = this.V[x] & 1;
             this.V[x] /= 2;
@@ -323,6 +353,7 @@ export class Chip8 {
           case 0x0007:
             // 8xy7 - SUBN Vx, Vy
             // Set Vx = Vy - Vx, set VF = NOT borrow.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SUBN Vx, Vy');
 
             if (this.V[x] > this.V[y])
               this.V[0xF] = 1;
@@ -338,6 +369,7 @@ export class Chip8 {
             // 8xyE - SHL Vx {, Vy}
             // Set Vy = Vx = Vy SHL 1.
             // Shifts VY left by one and copies the result to VX. VF is set to the value of the most significant bit of VY before the shift.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SHL Vx {, Vy}');
 
             this.V[0xF] = this.V[y] >> 7;
 
@@ -347,7 +379,8 @@ export class Chip8 {
             break;
 
           default:
-            this.unknownOpcode(opcode);
+            this.log(LogLevels.ERROR, '[Chip8] emulateCycle - Unknown opcode: 0x' + opcode.toString(16));
+            this.pc += 2;
             break;
         }
         break;
@@ -355,6 +388,7 @@ export class Chip8 {
       case 0x9000:
         // 9xy0 - SNE Vx, Vy
         // Skip next instruction if Vx != Vy.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SNE Vx, Vy');
 
         if (this.V[x] != this.V[y]) {
           this.pc += 2;
@@ -366,6 +400,7 @@ export class Chip8 {
       case 0xA000:
         // Annn - LD I, addr
         // Set I = nnn.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD I, addr');
 
         this.I = nnn;
 
@@ -375,6 +410,7 @@ export class Chip8 {
       case 0xB000:
         // Bnnn - JP V0, addr
         // Jump to location nnn + V0.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - JP V0, addr');
 
         this.pc = nnn + this.V[0x0];
 
@@ -383,6 +419,7 @@ export class Chip8 {
       case 0xC000:
         // Cxkk - RND Vx, byte
         // Set Vx = random byte AND kk.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - RND Vx, byte');
 
         this.V[x] = (Math.floor(Math.random() * 0xFF)) & kk;
 
@@ -392,6 +429,8 @@ export class Chip8 {
       case 0xD000:
         // Dxyn - DRW Vx, Vy, nibble
         // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+        this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - DRW Vx, Vy, nibble');
+
         let pixel;
 
         // Reset VF. We'll set this to 1 later if there is a collision.
@@ -430,6 +469,7 @@ export class Chip8 {
           case 0x009E:
             // Ex9E - SKP Vx
             // Skip next instruction if key with the value of Vx is pressed.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SKP Vx');
 
             if (this.keyboard[this.V[x]] === true) {
               this.pc += 2;
@@ -441,6 +481,7 @@ export class Chip8 {
           case 0x00A1:
             // ExA1 - SKNP Vx
             // Skip next instruction if key with the value of Vx is not pressed.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - SKNP Vx');
 
             if (this.keyboard[this.V[x]] === false) {
               this.pc += 2;
@@ -450,7 +491,8 @@ export class Chip8 {
             break;
 
           default:
-            this.unknownOpcode(opcode);
+            this.log(LogLevels.ERROR, '[Chip8] emulateCycle - Unknown opcode: 0x' + opcode.toString(16));
+            this.pc += 2;
             break;
         }
         break;
@@ -460,6 +502,7 @@ export class Chip8 {
           case 0x0007:
             // Fx07 - LD Vx, DT
             // Set Vx = delay timer value.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD Vx, DT');
 
             this.V[x] = this.delay_timer;
 
@@ -489,6 +532,7 @@ export class Chip8 {
           case 0x0015:
             // Fx15 - LD DT, Vx
             // Set delay timer = Vx.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD DT, Vx');
 
             this.delay_timer = this.V[x];
 
@@ -498,6 +542,7 @@ export class Chip8 {
           case 0x0018:
             // Fx18 - LD ST, Vx
             // Set sound timer = Vx.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD ST, Vx');
 
             this.sound_timer = this.V[x];
 
@@ -507,6 +552,7 @@ export class Chip8 {
           case 0x001E:
             // Fx1E - ADD I, Vx
             // Set I = I + Vx.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - ADD I, Vx');
 
             this.I += this.V[x];
 
@@ -514,8 +560,10 @@ export class Chip8 {
             break;
 
           case 0x0029:
-            // Fx29 - LD F, Vx
+            // Fx29 - LD I, Vx
             // Set I = location of sprite for digit Vx.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD I, Vx');
+
             this.I = this.V[x] * 5;
             this.pc += 2;
             break;
@@ -523,9 +571,12 @@ export class Chip8 {
           case 0x0033:
             // Fx33 - LD B, Vx
             // Store BCD representation of Vx in memory locations I, I+1, and I+2.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD B, Vx');
+
             this.memory[this.I] = this.V[x] / 100;
             this.memory[this.I + 1] = (this.V[x] / 10) % 10;
             this.memory[this.I + 2] = (this.V[x] % 100) % 10;
+
             this.pc += 2;
             break;
 
@@ -533,6 +584,7 @@ export class Chip8 {
             // Fx55 - LD [I], Vx
             // Store registers V0 through Vx in memory starting at location I.
             // Stores V0 to VX (including VX) in memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD [I], Vx');
 
             // For each register
             for (let a = 0; a <= (x); a++) {
@@ -550,6 +602,7 @@ export class Chip8 {
             // Fx65 - LD Vx, [I]
             // Read registers V0 through Vx from memory starting at location I.
             // Fills V0 to VX (including VX) with values from memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+            this.log(LogLevels.DEBUG, '[Chip8] opcode ' + opcode.toString(16) + ' - LD Vx, [I]');
 
             // For each register
             for (let a = 0; a <= (x); a++) {
@@ -564,13 +617,15 @@ export class Chip8 {
             break;
 
           default:
-            this.unknownOpcode(opcode);
+            this.log(LogLevels.ERROR, '[Chip8] emulateCycle - Unknown opcode: 0x' + opcode.toString(16));
+            this.pc += 2;
             break;
         }
         break;
 
       default:
-        this.unknownOpcode(opcode);
+        this.log(LogLevels.ERROR, '[Chip8] emulateCycle - Unknown opcode: 0x' + opcode.toString(16));
+        this.pc += 2;
         break;
     }
   }
