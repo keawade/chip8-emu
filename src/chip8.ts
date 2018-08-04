@@ -65,7 +65,7 @@ export class Chip8 {
   /**
    * Array storing the current screen state.
    */
-  public graphics: boolean[][];
+  public graphics: number[];
 
   /**
    * Flag to trigger drawing.
@@ -96,7 +96,7 @@ export class Chip8 {
     this.stack = _.fill(Array(16), 0);
 
     // Clear display
-    this.graphics = _.fill(Array(32), _.fill(Array(64), false));
+    this.graphics = _.fill(Array(32 * 64), 0);
     this.drawFlag = false;
 
     // Clear Registers
@@ -172,6 +172,29 @@ export class Chip8 {
     }
   }
 
+  private setPixel = (x: number, y: number): boolean => {
+    const width = 64;
+    const height = 32;
+
+    if (x > width) {
+      x -= width;
+    } else if (x < 0) {
+      x += width;
+    }
+
+    if (y > height) {
+      y -= height;
+    } else if (y < 0) {
+      y += height;
+    }
+
+    const location = x + (y * width);
+
+    this.graphics[location] ^= 1;
+
+    return !this.graphics[location];
+  }
+
   /**
    * Reads and executes the next opcode.
    */
@@ -195,7 +218,7 @@ export class Chip8 {
             // Clear the display.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - CLS');
 
-            this.graphics = _.fill(Array(32), _.fill(Array(64), false));
+            this.graphics = _.fill(Array(32 * 64), 0);
             this.drawFlag = true;
 
             this.pc += 2;
@@ -474,7 +497,7 @@ export class Chip8 {
             if ((pixel & 0x80) > 0) {
               // If a pixel is to be toggled
               // Check if if the value is already on
-              if (!!this.graphics[this.V[x] + xline][this.V[y] + yline]) {
+              if (this.setPixel(x + xline, y + yline)) {
                 // if (gfx[(V[X] + xline + ((V[Y] + yline) * 64))] == 1)
                 // If it is already on, set VF to 1
                 this.V[0xF] = 1;
