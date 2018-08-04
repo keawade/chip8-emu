@@ -3,8 +3,8 @@ import * as _ from 'lodash';
 enum LogLevels {
   ERROR = 0,
   WARN,
+  LOG,
   DEBUG,
-  ALL,
 }
 
 /**
@@ -84,6 +84,9 @@ export class Chip8 {
 
   constructor(loglevel?: LogLevels) {
     this.loglevel = !!loglevel ? loglevel : LogLevels.ERROR;
+
+    this.log(LogLevels.DEBUG, '[Chip8] intializing');
+
     this.pc = 0x200;
     this.I = 0;
     this.sp = 0;
@@ -120,6 +123,8 @@ export class Chip8 {
    * @param {Uint8Array} program - Program code as an unsigned 8-bit integer array.
    */
   public loadProgram = (program: Uint8Array) => {
+    this.log(LogLevels.DEBUG, 'Loading program');
+
     for (let i = 0; i < program.length; i++) {
       this.memory[i + 0x200] = program[i];
     }
@@ -131,6 +136,8 @@ export class Chip8 {
    * @param {boolean} state - The state of the key
    */
   public setKey = (key: string, state: boolean) => {
+    this.log(LogLevels.DEBUG, '[Chip8] setting key ' + key + ' to state ' + state);
+
     const keys = ['1', '2', '3', 'C', '4', '5', '6', 'D', '7', '8', '9', 'E', 'A', '0', 'B', 'F'];
     const toPress = keys.sort().indexOf(key.toLowerCase());
     this.keyboard[toPress] = state;
@@ -140,10 +147,28 @@ export class Chip8 {
    * Sets all key states to "Off".
    */
   public clearKeys = () => {
+    this.log(LogLevels.DEBUG, 'Clearing keys');
+
     this.keyboard = _.fill(Array(16), false);
   }
 
   private log = (level: LogLevels, message: string) => {
+    if (level <= this.loglevel) {
+      switch (level) {
+        case LogLevels.ERROR:
+          console.error(message);
+          break;
+        case LogLevels.WARN:
+          console.warn(message);
+          break;
+        case LogLevels.LOG:
+          console.log(message);
+          break;
+        case LogLevels.DEBUG:
+          console.debug(message);
+          break;
+      }
+    }
   }
 
   /**
