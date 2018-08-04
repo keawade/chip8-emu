@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { Prog } from './programs';
 
 /**
  * Chip-8 Emulator
@@ -14,7 +13,7 @@ export class Chip8 {
    * 4096 bytes of memory.
    * Handles all storage other than the stack and registers.
    */
-  private memory: number[];
+  private memory: Uint8Array;
 
   /**
    * General purpose 8-bit registers (V0 - VF).
@@ -97,10 +96,12 @@ export class Chip8 {
     this.keyboard = _.fill(Array(16), false);
 
     // Clear memory
-    this.memory = _.fill(Array(0x1000), 0);
+    this.memory = new Uint8Array(new ArrayBuffer(0x1000));
 
     // Load font set
-    this.memory.splice(0, FONTSET.length, ...FONTSET);
+    for (let i = 0; i < FONTSET.length; i++) {
+      this.memory[i] = FONTSET[i];
+    }
 
     // Clear timers
     this.delay_timer = 0;
@@ -109,12 +110,12 @@ export class Chip8 {
 
   /**
    * Loads the provided program.
-   * @param {Prog} program - An object containing the program name and the program binary in hex.
+   * @param {Uint8Array} program - Program code as an unsigned 8-bit integer array.
    */
-  public loadProgram = (program: Prog) => {
-    console.log('[Chip8] loading program', program.name);
-
-    this.memory.splice(0x200, program.code.length, ...program.code.split('').map(n => parseInt(n, 16)));
+  public loadProgram = (program: Uint8Array) => {
+    for (let i = 0; i < program.length; i++) {
+      this.memory[i + 0x200] = program[i];
+    }
   }
 
   /**
@@ -597,5 +598,5 @@ const FONTSET = [
   0xF0, 0x80, 0x80, 0x80, 0xF0, // C
   0xE0, 0x90, 0x90, 0x90, 0xE0, // D
   0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+  0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
