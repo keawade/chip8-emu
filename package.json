@@ -1,6 +1,6 @@
 {
   "name": "@keawade/chip8-emu",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A Chip-8 emulator",
   "repository": "git@gitlab.com:keawade/chip8-emu.git",
   "author": "Keith Wade <keawade@protonmail.com>",
@@ -11,8 +11,7 @@
   "types": "dist/chip8.d.ts",
   "source": "src/chip8.ts",
   "scripts": {
-    "build": "microbundle",
-    "dev": "microbundle watch"
+    "build": "microbundle"
   },
   "devDependencies": {
     "microbundle": "^0.6.0"
