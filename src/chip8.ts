@@ -57,11 +57,6 @@ export class Chip8 {
 
   /**
 
-   * 8-bit stack pointer.
-   * Points to the topmost level of the stack.
-   */
-  private sp: number;
-
   /**
    * Array storing the current screen state.
    */
@@ -90,10 +85,9 @@ export class Chip8 {
 
     this.pc = 0x200;
     this.I = 0;
-    this.sp = 0;
 
     // Clear stack
-    this.stack = _.fill(Array(16), 0);
+    this.stack = [];
 
     // Clear display
     this.graphics = _.fill(Array(32 * 64), 0);
@@ -229,8 +223,7 @@ export class Chip8 {
             // Return from a subroutine.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - RET');
 
-            this.sp -= 1;
-            this.pc = this.stack[this.sp];
+            this.pc = this.stack.pop() as number;
 
             this.pc += 2;
             break;
@@ -254,8 +247,7 @@ export class Chip8 {
         // Call subroutine at nnn.
         this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - CALL');
 
-        this.stack[this.sp] = this.pc;
-        this.sp += 1;
+        this.stack.push(this.pc);
         this.pc = nnn;
         break;
 
@@ -369,15 +361,16 @@ export class Chip8 {
             // Set Vx = Vx + Vy, set VF = carry.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - ADD Vx, Vy');
 
-            if (this.V[x] > this.V[y])
-              this.V[0xF] = 1; // carry
-            else
-              this.V[0xF] = 0;
-
             this.V[x] += this.V[y];
 
-            if (this.V[x] > 0x0FF) {
+            // Carry bit
+            if (this.V[x] > 0xFF) {
+              this.V[0xF] = 1;
+
+              // Handle roll over
               this.V[x] -= 0xF00;
+            } else {
+              this.V[0xF] = 0;
             }
 
             this.pc += 2;
@@ -388,14 +381,16 @@ export class Chip8 {
             // Set Vx = Vx - Vy, set VF = NOT borrow.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SUB Vx, Vy');
 
-            if (this.V[x] > this.V[y])
+            if (this.V[x] < this.V[y]) {
               this.V[0xF] = 1;
-            else
+            } else {
               this.V[0xF] = 0;
+            }
 
             this.V[x] -= this.V[y];
 
             if (this.V[x] < 0) {
+              // Handle roll over
               this.V[x] += 0xF00;
             }
 
@@ -408,8 +403,11 @@ export class Chip8 {
             // Shifts VY right by one and stores the result to VX (VY remains unchanged). VF is set to the value of the least significant bit of VY before the shift.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SHR Vx');
 
-            this.V[0xF] = this.V[x] & 1;
-            this.V[x] /= 2;
+            // this.V[0xF] = this.V[x] & 1;
+            // this.V[x] /= 2;
+
+            this.V[0xF] = this.V[x] & 0x01;
+            this.V[x] = this.V[x] >> 1;
 
             this.pc += 2;
             break;
@@ -419,12 +417,17 @@ export class Chip8 {
             // Set Vx = Vy - Vx, set VF = NOT borrow.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SUBN Vx, Vy');
 
-            if (this.V[x] > this.V[y])
+            if (this.V[y] < this.V[x])
               this.V[0xF] = 1;
             else
               this.V[0xF] = 0;
 
             this.V[x] = this.V[y] - this.V[x];
+
+            if (this.V[x] < 0) {
+              // Handle roll over
+              this.V[x] += 0xF00;
+            }
 
             this.pc += 2;
             break;
@@ -435,9 +438,20 @@ export class Chip8 {
             // Shifts VY left by one and copies the result to VX. VF is set to the value of the most significant bit of VY before the shift.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SHL Vx {, Vy}');
 
-            this.V[0xF] = this.V[y] >> 7;
+            // this.V[0xF] = this.V[y] >> 7;
+            // this.V[x] = this.V[x] * 2;
 
-            this.V[x] = this.V[x] * 2;
+            if (this.V[x] & 0x80) {
+              this.V[0xF] = 1;
+            } else {
+              this.V[0xF] = 0;
+            }
+
+            this.V[x] = this.V[x] << 1;
+            
+            if (this.V[x] > 0xFF) {
+              this.V[x] -= 0xF00;
+            }
 
             this.pc += 2;
             break;
@@ -534,7 +548,7 @@ export class Chip8 {
             // Skip next instruction if key with the value of Vx is pressed.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SKP Vx');
 
-            if (this.keyboard[this.V[x]] === true) {
+            if (this.keyboard[this.V[x]]) {
               this.pc += 2;
             }
 
@@ -546,7 +560,7 @@ export class Chip8 {
             // Skip next instruction if key with the value of Vx is not pressed.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SKNP Vx');
 
-            if (this.keyboard[this.V[x]] === false) {
+            if (!this.keyboard[this.V[x]]) {
               this.pc += 2;
             }
 
@@ -579,7 +593,7 @@ export class Chip8 {
             let keyPressed = false;
 
             for (let i = 0; i < 16; i++) {
-              if (this.keyboard[i] === true) {
+              if (this.keyboard[i]) {
                 this.V[x] = i;
                 keyPressed = true;
               }
@@ -628,6 +642,7 @@ export class Chip8 {
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - LD I, Vx');
 
             this.I = this.V[x] * 5;
+
             this.pc += 2;
             break;
 
@@ -656,7 +671,7 @@ export class Chip8 {
             }
 
             // This conflicts with Wikipedia's description but matches BYTE Magazine Vol 3 Num 12 p110
-            this.I += (x) + 1;
+            // this.I += (x) + 1;
 
             this.pc += 2;
             break;
@@ -674,7 +689,7 @@ export class Chip8 {
             }
 
             // This conflicts with Wikipedia's description but matches BYTE Magazine Vol 3 Num 12 p110
-            this.I += (x) + 1;
+            // this.I += (x) + 1;
 
             this.pc += 2;
             break;
