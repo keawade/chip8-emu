@@ -430,7 +430,7 @@ export class Chip8 {
             }
 
             this.V[x] = this.V[x] << 1;
-            
+
             if (this.V[x] > 0xFF) {
               this.V[x] -= 0xF00;
             }
@@ -697,6 +697,13 @@ export class Chip8 {
         this.pc += 2;
         break;
     }
+
+    // Decrement timers
+    if (this.delay_timer > 0)
+      this.delay_timer -= 1;
+
+    if (this.sound_timer > 0)
+      this.sound_timer -= 1;
 
     // Handle program counter overflow
     this.pc &= 0x0FFF;
