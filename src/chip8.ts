@@ -264,7 +264,7 @@ export class Chip8 {
         // Skip next instruction if Vx = kk.
         this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SE Vx, byte');
 
-        if (this.V[x] == kk) {
+        if (this.V[x] === kk) {
           this.pc += 2;
         }
 
@@ -288,7 +288,7 @@ export class Chip8 {
         // Skip next instruction if Vx = Vy.
         this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SE Vx, Vy');
 
-        if (this.V[x] == this.V[y]) {
+        if (this.V[x] === this.V[y]) {
           this.pc += 2;
         }
 
@@ -310,7 +310,14 @@ export class Chip8 {
         // Set Vx = Vx + kk.
         this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - ADD Vx, byte');
 
-        this.V[x] += kk;
+        let temp = this.V[x] + kk;
+
+        // Handle roll over
+        if (temp > 0x0FF) {
+          temp -= 0x100
+        }
+
+        this.V[x] = temp;
 
         this.pc += 2;
         break;
@@ -362,12 +369,16 @@ export class Chip8 {
             // Set Vx = Vx + Vy, set VF = carry.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - ADD Vx, Vy');
 
-            this.V[x] += this.V[y];
-
             if (this.V[x] > this.V[y])
               this.V[0xF] = 1; // carry
             else
               this.V[0xF] = 0;
+
+            this.V[x] += this.V[y];
+
+            if (this.V[x] > 0x0FF) {
+              this.V[x] -= 0xF00;
+            }
 
             this.pc += 2;
             break;
@@ -383,6 +394,10 @@ export class Chip8 {
               this.V[0xF] = 0;
 
             this.V[x] -= this.V[y];
+
+            if (this.V[x] < 0) {
+              this.V[x] += 0xF00;
+            }
 
             this.pc += 2;
             break;
@@ -498,14 +513,10 @@ export class Chip8 {
               // If a pixel is to be toggled
               // Check if if the value is already on
               if (this.setPixel(this.V[x] + xline, this.V[y] + yline)) {
-                // if (gfx[(V[X] + xline + ((V[Y] + yline) * 64))] == 1)
                 // If it is already on, set VF to 1
                 this.V[0xF] = 1;
               }
             }
-            // XOR the given value with the new value
-            // gfx[V[X] + xline + ((V[Y] + yline) * 64)] ^= 1;
-            // this.graphics[this.V[x] + xline][this.V[y] + yline] !== true; // TODO: Verify
             pixel <<= 1;
           }
         }
