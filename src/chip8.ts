@@ -697,6 +697,9 @@ export class Chip8 {
         this.pc += 2;
         break;
     }
+
+    // Handle program counter overflow
+    this.pc &= 0x0FFF;
   }
 }
 
