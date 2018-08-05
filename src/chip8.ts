@@ -22,7 +22,7 @@ export class Chip8 {
    * General purpose 8-bit registers (V0 - VF).
    * Register F should not be used by programs as it is used as a flag by some instructions.
    */
-  private V: number[];
+  private V: Uint8Array;
 
   /**
    * 16-bit register I.
@@ -94,7 +94,7 @@ export class Chip8 {
     this.drawFlag = false;
 
     // Clear Registers
-    this.V = _.fill(Array(16), 0);
+    this.V = new Uint8Array(16);
     this.I = 0;
 
     // Clear keyboard state
@@ -304,11 +304,6 @@ export class Chip8 {
 
         let temp = this.V[x] + kk;
 
-        // Handle roll over
-        if (temp > 0x0FF) {
-          temp -= 0x100
-        }
-
         this.V[x] = temp;
 
         this.pc += 2;
@@ -366,9 +361,6 @@ export class Chip8 {
             // Carry bit
             if (this.V[x] > 0xFF) {
               this.V[0xF] = 1;
-
-              // Handle roll over
-              this.V[x] -= 0xF00;
             } else {
               this.V[0xF] = 0;
             }
@@ -388,11 +380,6 @@ export class Chip8 {
             }
 
             this.V[x] -= this.V[y];
-
-            if (this.V[x] < 0) {
-              // Handle roll over
-              this.V[x] += 0xF00;
-            }
 
             this.pc += 2;
             break;
@@ -423,11 +410,6 @@ export class Chip8 {
               this.V[0xF] = 0;
 
             this.V[x] = this.V[y] - this.V[x];
-
-            if (this.V[x] < 0) {
-              // Handle roll over
-              this.V[x] += 0xF00;
-            }
 
             this.pc += 2;
             break;
@@ -632,6 +614,15 @@ export class Chip8 {
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - ADD I, Vx');
 
             this.I += this.V[x];
+
+            if (this.I > 0xFFF) {
+              this.V[0xF] = 1;
+            } else {
+              this.V[0xF] = 0;
+            }
+
+            // Handle overflow
+            this.I = this.I & 0xFFF;
 
             this.pc += 2;
             break;
