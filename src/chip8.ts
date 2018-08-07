@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { leftPad } from './leftpad';
 
 enum LogLevels {
@@ -7,6 +6,11 @@ enum LogLevels {
   LOG,
   DEBUG,
 }
+
+/**
+ * All possible keypad key names.
+ */
+type KeyName = '1' | '2' | '3' | 'C' | '4' | '5' | '6' | 'D' | '7' | '8' | '9' | 'E' | 'A' | '0' | 'B' | 'F';
 
 /**
  * Chip-8 Emulator
@@ -68,9 +72,26 @@ export class Chip8 {
   public drawFlag: boolean;
 
   /**
-   * Array of keyboard states.
+   * Keyboard key states.
    */
-  public keyboard: boolean[];
+  public keyboard: {
+    '0'?: boolean;
+    '1'?: boolean;
+    '2'?: boolean;
+    '3'?: boolean;
+    '4'?: boolean;
+    '5'?: boolean;
+    '6'?: boolean;
+    '7'?: boolean;
+    '8'?: boolean;
+    '9'?: boolean;
+    'A'?: boolean;
+    'B'?: boolean;
+    'C'?: boolean;
+    'D'?: boolean;
+    'E'?: boolean;
+    'F'?: boolean;
+  };
 
   /**
    * Current Loglevel.
@@ -90,7 +111,7 @@ export class Chip8 {
     this.stack = [];
 
     // Clear display
-    this.graphics = _.fill(Array(32 * 64), 0);
+    this.graphics = [];
     this.drawFlag = false;
 
     // Clear Registers
@@ -98,7 +119,7 @@ export class Chip8 {
     this.I = 0;
 
     // Clear keyboard state
-    this.keyboard = _.fill(Array(16), false);
+    this.keyboard = {};
 
     // Clear memory
     this.memory = new Uint8Array(new ArrayBuffer(0x1000));
@@ -130,12 +151,10 @@ export class Chip8 {
    * @param {string} key - The key to set.
    * @param {boolean} state - The state of the key
    */
-  public setKey = (key: string, state: boolean) => {
+  public setKey = (key: KeyName, state: boolean) => {
     this.log(LogLevels.DEBUG, '[Chip8] setting key ' + key + ' to state ' + state);
 
-    const keys = ['1', '2', '3', 'C', '4', '5', '6', 'D', '7', '8', '9', 'E', 'A', '0', 'B', 'F'];
-    const toPress = keys.sort().indexOf(key.toLowerCase());
-    this.keyboard[toPress] = state;
+    this.keyboard[key] = state;
   }
 
   /**
@@ -144,7 +163,7 @@ export class Chip8 {
   public clearKeys = () => {
     this.log(LogLevels.DEBUG, 'Clearing keys');
 
-    this.keyboard = _.fill(Array(16), false);
+    this.keyboard = {};
   }
 
   private log = (level: LogLevels, message: string) => {
@@ -212,7 +231,7 @@ export class Chip8 {
             // Clear the display.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - CLS');
 
-            this.graphics = _.fill(Array(32 * 64), 0);
+            this.graphics = this.graphics.map((p) => (0));
             this.drawFlag = true;
 
             this.pc += 2;
@@ -530,7 +549,7 @@ export class Chip8 {
             // Skip next instruction if key with the value of Vx is pressed.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SKP Vx');
 
-            if (this.keyboard[this.V[x]]) {
+            if (this.keyboard[this.V[x].toString(16) as KeyName]) {
               this.pc += 2;
             }
 
@@ -542,7 +561,7 @@ export class Chip8 {
             // Skip next instruction if key with the value of Vx is not pressed.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - SKNP Vx');
 
-            if (!this.keyboard[this.V[x]]) {
+            if (!this.keyboard[this.V[x].toString(16) as KeyName]) {
               this.pc += 2;
             }
 
@@ -575,7 +594,7 @@ export class Chip8 {
             let keyPressed = false;
 
             for (let i = 0; i < 16; i++) {
-              if (this.keyboard[i]) {
+              if (this.keyboard[i.toString(16) as KeyName]) {
                 this.V[x] = i;
                 keyPressed = true;
               }
