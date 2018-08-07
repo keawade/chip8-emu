@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { leftPad } from './leftpad';
 
 enum LogLevels {
@@ -111,7 +112,7 @@ export class Chip8 {
     this.stack = [];
 
     // Clear display
-    this.graphics = [];
+    this.graphics = _.fill(Array(32 * 64), 0);
     this.drawFlag = false;
 
     // Clear Registers
@@ -231,7 +232,7 @@ export class Chip8 {
             // Clear the display.
             this.log(LogLevels.DEBUG, '[Chip8] opcode 0x' + leftPad(opcode.toString(16), 4, 0) + ' - CLS');
 
-            this.graphics = this.graphics.map((p) => (0));
+            this.graphics = _.fill(Array(32 * 64), 0);
             this.drawFlag = true;
 
             this.pc += 2;
